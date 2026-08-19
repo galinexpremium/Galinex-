@@ -10,7 +10,7 @@ import ProductCustomizer from '@/components/ProductCustomizer';
 
 export default function ProductDetailPage() {
   const { pageProps, addToCart, toggleWishlist, isInWishlist, toggleCompare, isInCompare, addRecentlyViewed, navigate, recentlyViewed } = useStore();
-  const slug = pageProps.slug as string;
+  const slug = (pageProps.slug as string) || (typeof window !== 'undefined' ? window.location.pathname.replace(/^\/+|\/+$/g, '').split('product/')[1] : '');
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -100,6 +100,14 @@ export default function ProductDetailPage() {
   const inWishlist = isInWishlist(product.id);
   const inCompare = isInCompare(product.id);
 
+  const categorySlug = product.category?.slug || '';
+  const isCrystal = categorySlug.includes('crystal') || categorySlug.includes('3d');
+  const isWood = categorySlug.includes('wood');
+  const isAcrylic = categorySlug.includes('acrylic');
+  const isMoonLamp = categorySlug.includes('moon');
+  const isHeartShape = product.slug.includes('heart');
+  const isOvalShape = product.slug.includes('oval');
+
   return (
     <div className="min-h-screen bg-ivory dark:bg-walnut-950 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Breadcrumb */}
@@ -117,7 +125,67 @@ export default function ProductDetailPage() {
           <div className="relative aspect-[4/5] max-w-[480px] mx-auto rounded-2xl overflow-hidden bg-[#0d0b0a] border border-gold-400/20 shadow-2xl cursor-pointer group" onClick={() => setLightbox(true)}>
             {product.badge && <div className={`absolute top-4 left-4 z-10 px-3 py-1 text-[9px] font-semibold text-ivory uppercase tracking-wider rounded-md shadow-md ${badgeColor(product.badge)}`}>{badgeLabel(product.badge)}</div>}
             {discount > 0 && <div className="absolute top-4 right-4 z-10 px-2.5 py-1 bg-walnut-950/90 text-gold-300 text-[9px] font-semibold tracking-wider rounded-md border border-gold-500/30">-{discount}%</div>}
+            
+            {/* Base Product Photography */}
             <img src={images[activeImage] ?? getProductImageUrl(product)} alt={product.name} className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-700 group-hover:scale-105" />
+
+            {/* Live Synchronized Personalization Engraving Layer */}
+            {customizationData?.photo_url && activeImage === 0 && (
+              <div
+                className="absolute z-20 pointer-events-none transition-all duration-300 flex items-center justify-center overflow-hidden"
+                style={{
+                  top: isHeartShape ? '24%' : isOvalShape ? '22%' : isMoonLamp ? '18%' : '20%',
+                  left: isHeartShape ? '20%' : isOvalShape ? '22%' : '20%',
+                  width: isHeartShape ? '60%' : isOvalShape ? '56%' : '60%',
+                  height: isHeartShape ? '52%' : isOvalShape ? '54%' : '54%',
+                  maskImage: isHeartShape
+                    ? 'radial-gradient(ellipse 52% 52% at 50% 46%, black 35%, rgba(0,0,0,0.85) 55%, transparent 85%)'
+                    : 'radial-gradient(ellipse 48% 54% at 50% 46%, black 42%, rgba(0,0,0,0.8) 62%, transparent 88%)',
+                  WebkitMaskImage: isHeartShape
+                    ? 'radial-gradient(ellipse 52% 52% at 50% 46%, black 35%, rgba(0,0,0,0.85) 55%, transparent 85%)'
+                    : 'radial-gradient(ellipse 48% 54% at 50% 46%, black 42%, rgba(0,0,0,0.8) 62%, transparent 88%)',
+                  mixBlendMode: isWood ? 'multiply' : 'screen',
+                  opacity: isWood ? 0.92 : 0.96,
+                }}
+              >
+                <img
+                  src={customizationData.photo_url}
+                  alt="Engraved Portrait"
+                  className="w-full h-full object-contain"
+                  style={{
+                    transform: `scale(${customizationData.photo_transform?.scale ?? 1}) rotate(${customizationData.rotation ?? 0}deg)`,
+                    filter: isWood
+                      ? 'sepia(90%) grayscale(30%) contrast(165%) brightness(88%)'
+                      : isCrystal
+                      ? 'grayscale(100%) contrast(150%) brightness(115%) drop-shadow(0 0 10px rgba(255,255,255,0.7))'
+                      : 'grayscale(80%) brightness(125%) drop-shadow(0 0 12px rgba(255,225,150,0.65))',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Live Synchronized Personalization Text Layer */}
+            {customizationData?.text && activeImage === 0 && (
+              <div
+                className="absolute z-30 pointer-events-none text-center px-4 transition-all duration-300 w-full"
+                style={{
+                  top: isHeartShape ? '76%' : isWood ? '78%' : '80%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontFamily: customizationData.font,
+                  color: isWood ? '#2b180d' : isAcrylic ? '#fff6df' : '#FFFFFF',
+                  textShadow: isWood
+                    ? '0 1px 1px rgba(255,255,255,0.4), inset 0 1px 2px rgba(0,0,0,0.6)'
+                    : isAcrylic
+                    ? '0 0 8px rgba(255,220,130,0.9)'
+                    : '0 0 10px rgba(255,255,255,0.9)',
+                }}
+              >
+                <p className="text-xs sm:text-sm font-semibold tracking-widest uppercase truncate max-w-[280px] mx-auto">
+                  {customizationData.text}
+                </p>
+              </div>
+            )}
           </div>
           {images.length > 1 && (
             <div className="flex gap-3 mt-4 justify-center overflow-x-auto pb-2 scrollbar-hide">

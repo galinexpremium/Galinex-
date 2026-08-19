@@ -78,9 +78,45 @@ function getSessionId(): string {
   return id;
 }
 
+function parseRouteFromUrl(): { page: Page; props: Record<string, unknown> } {
+  if (typeof window === 'undefined') return { page: 'home', props: {} };
+  const pathname = window.location.pathname;
+  const cleanPath = pathname.replace(/^\/+|\/+$/g, '');
+  const searchParams = new URLSearchParams(window.location.search);
+  const category = searchParams.get('category');
+
+  if (!cleanPath || cleanPath === '') {
+    return { page: 'home', props: {} };
+  }
+  if (cleanPath === 'shop') {
+    return { page: 'shop', props: category ? { category } : {} };
+  }
+  if (cleanPath.startsWith('product/')) {
+    const slug = cleanPath.substring('product/'.length);
+    return { page: 'product', props: { slug } };
+  }
+  if (cleanPath === 'cart') return { page: 'cart', props: {} };
+  if (cleanPath === 'checkout') return { page: 'checkout', props: {} };
+  if (cleanPath === 'wishlist') return { page: 'wishlist', props: {} };
+  if (cleanPath === 'compare') return { page: 'compare', props: {} };
+  if (cleanPath === 'account') return { page: 'account', props: {} };
+  if (cleanPath === 'login') return { page: 'login', props: {} };
+  if (cleanPath === 'register') return { page: 'register', props: {} };
+  if (cleanPath === 'about') return { page: 'about', props: {} };
+  if (cleanPath === 'contact') return { page: 'contact', props: {} };
+  if (cleanPath === 'gallery') return { page: 'gallery', props: {} };
+  if (cleanPath === 'reviews') return { page: 'reviews', props: {} };
+  if (cleanPath === 'faq') return { page: 'faq', props: {} };
+  if (cleanPath === 'admin') return { page: 'admin', props: {} };
+  if (cleanPath === 'track-order' || cleanPath === 'orders') return { page: 'track-order', props: {} };
+
+  return { page: 'home', props: {} };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [pageProps, setPageProps] = useState<Record<string, unknown>>({});
+  const initialRoute = parseRouteFromUrl();
+  const [currentPage, setCurrentPage] = useState<Page>(initialRoute.page);
+  const [pageProps, setPageProps] = useState<Record<string, unknown>>(initialRoute.props);
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
@@ -131,6 +167,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const navigate = useCallback((page: Page, props: Record<string, unknown> = {}) => {
     setCurrentPage(page);
     setPageProps(props);
+
+    let targetUrl = '/';
+    if (page === 'shop') {
+      targetUrl = props.category ? `/shop?category=${encodeURIComponent(props.category as string)}` : '/shop';
+    } else if (page === 'product' && props.slug) {
+      targetUrl = `/product/${props.slug}`;
+    } else if (page !== 'home') {
+      targetUrl = `/${page}`;
+    }
+
+    if (window.location.pathname + window.location.search !== targetUrl) {
+      window.history.pushState({ page, props }, '', targetUrl);
+    }
+  }, []);
+
+  // Sync route on browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = parseRouteFromUrl();
+      setCurrentPage(route.page);
+      setPageProps(route.props);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Cart operations
