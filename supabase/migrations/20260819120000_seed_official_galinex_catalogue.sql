@@ -15,6 +15,8 @@ WHERE slug IN (
   '3d-crystal-photo-cube-small',
   '3d-crystal-heart-pendant',
   '3d-crystal-diamond-tower',
+  'wooden-photo-plaque',
+  'wooden-name-plate',
   'personalized-wooden-photo-plaque',
   'engraved-wooden-name-plate',
   'acrylic-led-photo-frame',
@@ -27,14 +29,14 @@ WHERE slug IN (
 );
 
 -- 3. Upsert Official Categories
-INSERT INTO categories (id, name, slug, description, sort_order, is_active)
+INSERT INTO categories (name, slug, description, sort_order, is_active)
 VALUES
-  ('c1111111-1111-1111-1111-111111111111', '3D Crystal Gifts', '3d-crystal-gifts', 'Premium 3D laser-engraved optical crystal keepsakes crafted with precision.', 1, true),
-  ('c2222222-2222-2222-2222-222222222222', 'Crystal Keychains', 'crystal-keychains', 'Carry your memories wherever you go with elegant 3D laser-engraved crystal keychains.', 2, true),
-  ('c3333333-3333-3333-3333-333333333333', 'Wooden Engraving Gifts', 'wooden-engraving', 'Custom laser-engraved natural wood plaques, heart keepsakes, and photo clocks.', 3, true),
-  ('c4444444-4444-4444-4444-444444444444', 'Acrylic & LED Frames', 'acrylic-led', 'High-clarity acrylic engraving with warm LED illumination wooden bases.', 4, true),
-  ('c5555555-5555-5555-5555-555555555555', 'Moon Lamps & Speakers', 'moon-lamps', 'Touch-controlled personalized photo moon lamps and light-up bluetooth speakers.', 5, true),
-  ('c6666666-6666-6666-6666-666666666666', 'MDF Decor Collection', 'mdf-decor', 'Artistic MDF family tree collages, love standees, and custom wall frames.', 6, true)
+  ('3D Crystal Gifts', '3d-crystal-gifts', 'Premium 3D laser-engraved optical crystal keepsakes crafted with precision.', 1, true),
+  ('Crystal Keychains', 'crystal-keychains', 'Carry your memories wherever you go with elegant 3D laser-engraved crystal keychains.', 2, true),
+  ('Wooden Engraving Gifts', 'wooden-engraving', 'Custom laser-engraved natural wood plaques, heart keepsakes, and photo clocks.', 3, true),
+  ('Acrylic & LED Frames', 'acrylic-led', 'High-clarity acrylic engraving with warm LED illumination wooden bases.', 4, true),
+  ('Moon Lamps & Speakers', 'moon-lamps', 'Touch-controlled personalized photo moon lamps and light-up bluetooth speakers.', 5, true),
+  ('MDF Decor Collection', 'mdf-decor', 'Artistic MDF family tree collages, love standees, and custom wall frames.', 6, true)
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
