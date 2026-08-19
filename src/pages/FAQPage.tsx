@@ -4,7 +4,7 @@ import {
   Truck, RefreshCw, CreditCard, MapPin, HelpCircle, MessageCircle,
 } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
-import { WHATSAPP_NUMBER } from '@/lib/supabase';
+import { buildDirectWhatsAppUrl } from '@/lib/whatsapp';
 
 interface FAQItem {
   id: string;
@@ -196,7 +196,7 @@ export default function FAQPage() {
                 Contact Us
               </button>
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                href={buildDirectWhatsAppUrl('Hi GALINEX, I have a question regarding your products/services.')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-8 py-3.5 rounded-full bg-ivory/15 backdrop-blur-sm border border-champagne-400/30 text-ivory font-semibold hover:bg-ivory/25 transition-colors"

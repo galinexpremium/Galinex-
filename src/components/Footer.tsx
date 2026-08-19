@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Instagram, Mail, Phone, MapPin, Send, Heart, ArrowRight, MessageCircle, Shield, Truck, RotateCcw, Lock } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
 import { supabase, BRAND_NAME, BRAND_PHONE, BRAND_EMAIL, BRAND_INSTAGRAM, BRAND_ADDRESS, BUSINESS_HOURS, WHATSAPP_NUMBER } from '@/lib/supabase';
+import { buildDirectWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function Footer() {
   const { navigate, setCatalogueOpen } = useStore();
@@ -120,7 +121,7 @@ export default function Footer() {
               <a href={BRAND_INSTAGRAM} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-gold-900/30 hover:border-gold-500 hover:bg-gold-600 flex items-center justify-center transition-all duration-500 hover:scale-110" aria-label="Instagram">
                 <Instagram size={17} />
               </a>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-gold-900/30 hover:border-gold-500 hover:bg-gold-600 flex items-center justify-center transition-all duration-500 hover:scale-110" aria-label="WhatsApp">
+              <a href={buildDirectWhatsAppUrl('Hi GALINEX, I would like to inquire about your personalized gifts.')} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-gold-900/30 hover:border-gold-500 hover:bg-gold-600 flex items-center justify-center transition-all duration-500 hover:scale-110" aria-label="WhatsApp">
                 <MessageCircle size={17} />
               </a>
               <a href={`mailto:${BRAND_EMAIL}`} className="w-11 h-11 rounded-full border border-gold-900/30 hover:border-gold-500 hover:bg-gold-600 flex items-center justify-center transition-all duration-500 hover:scale-110" aria-label="Email">

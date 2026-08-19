@@ -4,6 +4,7 @@ import {
   Send, CheckCircle, Loader2, Sparkles, ChevronRight,
 } from 'lucide-react';
 import { supabase, BRAND_PHONE, BRAND_EMAIL, BRAND_INSTAGRAM, BRAND_ADDRESS, BUSINESS_HOURS, WHATSAPP_NUMBER } from '@/lib/supabase';
+import { buildDirectWhatsAppUrl } from '@/lib/whatsapp';
 
 interface ContactMethod {
   icon: typeof Phone;
@@ -15,7 +16,7 @@ interface ContactMethod {
 
 const CONTACT_METHODS: ContactMethod[] = [
   { icon: Phone, label: 'Phone', value: BRAND_PHONE, href: `tel:${BRAND_PHONE.replace(/\s/g, '')}`, desc: 'Mon–Sat, 10 AM – 7 PM' },
-  { icon: MessageCircle, label: 'WhatsApp', value: `+${WHATSAPP_NUMBER}`, href: `https://wa.me/${WHATSAPP_NUMBER}`, desc: 'Fastest response' },
+  { icon: MessageCircle, label: 'WhatsApp', value: `+${WHATSAPP_NUMBER}`, href: buildDirectWhatsAppUrl('Hi GALINEX, I would like to get in touch with customer support.'), desc: 'Fastest response' },
   { icon: Instagram, label: 'Instagram', value: '@galinex', href: BRAND_INSTAGRAM, desc: 'DM us anytime' },
   { icon: Mail, label: 'Email', value: BRAND_EMAIL, href: `mailto:${BRAND_EMAIL}`, desc: 'We reply within 24 hours' },
 ];
@@ -230,7 +231,7 @@ export default function ContactPage() {
 
             {/* WhatsApp CTA */}
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={buildDirectWhatsAppUrl('Hi GALINEX, I would like to chat with support on WhatsApp.')}
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-gradient-to-r from-walnut-800 to-walnut-900 rounded-card p-6 hover:shadow-lg hover:shadow-champagne-500/20 transition-all group border border-champagne-700/30"

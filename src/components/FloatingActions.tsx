@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUp, MessageCircle } from 'lucide-react';
-import { WHATSAPP_NUMBER } from '@/lib/supabase';
 import { useStore } from '@/store/StoreContext';
+import { buildDirectWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function FloatingActions() {
   const [showTop, setShowTop] = useState(false);
@@ -25,18 +25,19 @@ export default function FloatingActions() {
   }, []);
 
   const showMobileNav = ['home', 'shop', 'wishlist', 'cart', 'account'].includes(currentPage);
+  const whatsappUrl = buildDirectWhatsAppUrl('Hi GALINEX, I have a question about your personalized gifts.');
 
   return (
     <>
       {/* Floating WhatsApp */}
       <aside
         aria-label="Contact options"
-        className={`fixed right-4 sm:right-6 z-40 group transition-all duration-500 ${
+        className={`fixed right-4 sm:right-6 z-40 group transition-all duration-500 max-w-full ${
           showMobileNav ? 'bottom-20 sm:bottom-6' : 'bottom-6'
         }`}
       >
         <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi GALINEX, I have a question about your personalized gifts.')}`}
+          href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="relative flex items-center justify-center cursor-pointer"

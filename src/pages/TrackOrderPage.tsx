@@ -5,8 +5,9 @@ import {
   ChevronRight, Box, ShieldCheck,
 } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
-import { supabase, WHATSAPP_NUMBER, BRAND_NAME } from '@/lib/supabase';
+import { supabase, BRAND_NAME } from '@/lib/supabase';
 import { formatPrice, formatDate } from '@/lib/format';
+import { buildDirectWhatsAppUrl, buildOrderTrackingMessage } from '@/lib/whatsapp';
 import type { Order } from '@/types';
 
 const ORDER_STEPS = [
@@ -334,7 +335,7 @@ export default function TrackOrderPage() {
                 </div>
 
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi GALINEX, I am tracking my order ${order.order_number}. Could you please share an update?`)}`}
+                  href={buildDirectWhatsAppUrl(buildOrderTrackingMessage(order.order_number))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-6 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-xs font-medium rounded-btn flex items-center justify-center gap-2 transition-colors"

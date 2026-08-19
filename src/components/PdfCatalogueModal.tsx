@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase, BRAND_NAME, BRAND_PHONE, BRAND_EMAIL, BRAND_ADDRESS, WHATSAPP_NUMBER } from '@/lib/supabase';
 import { formatPrice, getEffectivePrice, getProductImageUrl } from '@/lib/format';
+import { buildDirectWhatsAppUrl } from '@/lib/whatsapp';
 import type { Product, Category } from '@/types';
 
 interface PdfCatalogueModalProps {
@@ -269,7 +270,7 @@ export default function PdfCatalogueModal({ isOpen, onClose }: PdfCatalogueModal
                   </p>
                 </div>
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi GALINEX, I was viewing your PDF catalogue and would like to order.')}`}
+                  href={buildDirectWhatsAppUrl('Hi GALINEX, I was viewing your PDF catalogue and would like to order.')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-xs font-medium rounded-btn flex items-center gap-2 transition-colors print:hidden flex-shrink-0"

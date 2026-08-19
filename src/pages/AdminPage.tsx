@@ -1300,7 +1300,7 @@ function SettingsSection() {
       <SectionHeader title="Settings" subtitle="Site-wide configuration" />
       <div className={cardCls + ' p-6 space-y-4'}>
         <Field label="Brand Name"><input value={settings.brand_name} onChange={e => setSettings({ ...settings, brand_name: e.target.value })} className={inputCls} /></Field>
-        <Field label="WhatsApp Number"><input value={settings.whatsapp_number} onChange={e => setSettings({ ...settings, whatsapp_number: e.target.value })} className={inputCls} placeholder="919876543210" /></Field>
+        <Field label="WhatsApp Number"><input value={settings.whatsapp_number} onChange={e => setSettings({ ...settings, whatsapp_number: e.target.value })} className={inputCls} placeholder="919360482480" /></Field>
         <Field label="Announcement Banner"><input value={settings.announcement_banner} onChange={e => setSettings({ ...settings, announcement_banner: e.target.value })} className={inputCls} placeholder="Free shipping on orders over ₹999" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Free Shipping Threshold (₹)"><input type="number" value={settings.free_shipping_threshold} onChange={e => setSettings({ ...settings, free_shipping_threshold: Number(e.target.value) })} className={inputCls} /></Field>
