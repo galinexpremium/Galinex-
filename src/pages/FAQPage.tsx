@@ -4,6 +4,7 @@ import {
   Truck, RefreshCw, CreditCard, MapPin, HelpCircle, MessageCircle,
 } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
+import { WHATSAPP_NUMBER } from '@/lib/supabase';
 
 interface FAQItem {
   id: string;
@@ -195,7 +196,7 @@ export default function FAQPage() {
                 Contact Us
               </button>
               <a
-                href={`https://wa.me/919876543210`}
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-8 py-3.5 rounded-full bg-ivory/15 backdrop-blur-sm border border-champagne-400/30 text-ivory font-semibold hover:bg-ivory/25 transition-colors"

@@ -4,7 +4,7 @@ import { useStore } from '@/store/StoreContext';
 import { supabase, BRAND_NAME, BRAND_PHONE, BRAND_EMAIL, BRAND_INSTAGRAM, BRAND_ADDRESS, BUSINESS_HOURS, WHATSAPP_NUMBER } from '@/lib/supabase';
 
 export default function Footer() {
-  const { navigate } = useStore();
+  const { navigate, setCatalogueOpen } = useStore();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -159,6 +159,15 @@ export default function Footer() {
                   </button>
                 </li>
               ))}
+              <li>
+                <button
+                  onClick={() => setCatalogueOpen(true)}
+                  className="text-sm font-medium text-gold-400 hover:text-gold-300 transition-colors duration-300 flex items-center gap-2 group"
+                >
+                  <ArrowRight size={12} className="text-gold-400" />
+                  PDF Catalogue
+                </button>
+              </li>
             </ul>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, Heart, BarChart3, User, Menu, X, Phone } from 'lucide-react';
+import { Search, ShoppingBag, Heart, BarChart3, User, Menu, X, Phone, BookOpen } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
 import { useAuth } from '@/store/AuthContext';
 import { BRAND_NAME, BRAND_PHONE } from '@/lib/supabase';
@@ -8,7 +8,7 @@ import type { Product } from '@/types';
 import { formatPrice } from '@/lib/format';
 
 export default function Navbar() {
-  const { navigate, currentPage, cartCount, wishlistCount, compareCount, isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen } = useStore();
+  const { navigate, currentPage, cartCount, wishlistCount, compareCount, isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen, setCatalogueOpen } = useStore();
   const { user, isAdmin } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,7 +105,7 @@ export default function Navbar() {
             </button>
 
             {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-10">
+            <div className="hidden lg:flex items-center gap-8 xl:gap-10">
               {navLinks.map(link => (
                 <button
                   key={link.page}
@@ -122,6 +122,14 @@ export default function Navbar() {
                   }`} />
                 </button>
               ))}
+              <button
+                onClick={() => setCatalogueOpen(true)}
+                className="text-[13px] font-medium tracking-wide text-champagne-700 dark:text-champagne-400 hover:text-champagne-600 flex items-center gap-1.5 px-3 py-1 rounded-full bg-champagne-50 dark:bg-champagne-900/30 border border-champagne-200/60 dark:border-champagne-800/40 transition-all duration-300 hover:scale-105"
+                title="View & Download PDF Catalogue"
+              >
+                <BookOpen size={14} />
+                <span>Catalogue</span>
+              </button>
               {isAdmin && (
                 <button
                   onClick={() => navigate('admin')}
@@ -255,6 +263,16 @@ export default function Navbar() {
                   {link.label}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  setCatalogueOpen(true);
+                  setMenuOpen(false);
+                }}
+                className="flex items-center gap-2.5 w-full text-left px-5 py-4 rounded-input text-sm font-medium text-champagne-700 dark:text-champagne-400 hover:bg-cream/50 dark:hover:bg-walnut-900/50 transition-colors"
+              >
+                <BookOpen size={18} />
+                <span>PDF Product Catalogue</span>
+              </button>
               <button
                 onClick={() => navigate(user ? 'account' : 'login')}
                 className="block w-full text-left px-5 py-4 rounded-input text-sm font-medium text-walnut-700 dark:text-cream/70 hover:bg-cream/50 dark:hover:bg-walnut-900/50 transition-colors"

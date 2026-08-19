@@ -21,6 +21,9 @@ const GalleryPage = lazy(() => import('@/pages/GalleryPage'));
 const ReviewsPage = lazy(() => import('@/pages/ReviewsPage'));
 const FAQPage = lazy(() => import('@/pages/FAQPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
+const TrackOrderPage = lazy(() => import('@/pages/TrackOrderPage'));
+import PdfCatalogueModal from '@/components/PdfCatalogueModal';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function PageRouter() {
   const { currentPage } = useStore();
@@ -42,6 +45,9 @@ function PageRouter() {
     case 'reviews': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><ReviewsPage /></Suspense>;
     case 'faq': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><FAQPage /></Suspense>;
     case 'contact': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><ContactPage /></Suspense>;
+    case 'track-order':
+    case 'orders':
+      return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><TrackOrderPage /></Suspense>;
     default: return <HomePage />;
   }
 }
@@ -63,6 +69,8 @@ const META: Record<string, { title: string; description: string }> = {
   reviews: { title: 'Customer Reviews | GALINEX', description: 'Read what our customers say about GALINEX personalized gifts.' },
   faq: { title: 'FAQ | GALINEX', description: 'Frequently asked questions about GALINEX products and orders.' },
   contact: { title: 'Contact Us | GALINEX', description: 'Get in touch with GALINEX for inquiries and support.' },
+  'track-order': { title: 'Track Your Order | GALINEX', description: 'Track the real-time shipping and delivery status of your GALINEX order.' },
+  orders: { title: 'Track Your Order | GALINEX', description: 'Track the real-time shipping and delivery status of your GALINEX order.' },
 };
 
 function ensureMetaTag(name: string, content: string, attr: 'name' | 'property' = 'name') {
@@ -96,7 +104,7 @@ function ensureJsonLd(data: Record<string, unknown>) {
 }
 
 function AppContent() {
-  const { currentPage } = useStore();
+  const { currentPage, isCatalogueOpen, setCatalogueOpen } = useStore();
   const meta = META[currentPage] ?? META.home;
 
   useEffect(() => {
@@ -128,16 +136,19 @@ function AppContent() {
       <Footer />
       <FloatingActions />
       <MobileNav />
+      <PdfCatalogueModal isOpen={isCatalogueOpen} onClose={() => setCatalogueOpen(false)} />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StoreProvider>
-        <AppContent />
-      </StoreProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

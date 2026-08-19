@@ -54,6 +54,8 @@ interface StoreContextValue {
   setMenuOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
+  isCatalogueOpen: boolean;
+  setCatalogueOpen: (open: boolean) => void;
 
   // Session
   sessionId: string;
@@ -91,6 +93,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [paymentMethod, setPaymentMethod] = useState('whatsapp');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
+  const [isCatalogueOpen, setCatalogueOpen] = useState(false);
   const [sessionId] = useState(getSessionId);
 
   // Load persisted state
@@ -281,6 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     appliedCoupon, couponCode, discountAmount, applyCoupon, removeCoupon,
     shippingAddress, setShippingAddress, paymentMethod, setPaymentMethod,
     isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen,
+    isCatalogueOpen, setCatalogueOpen,
     sessionId,
   };
 

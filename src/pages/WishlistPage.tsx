@@ -4,9 +4,10 @@ import { formatPrice, getEffectivePrice } from '@/lib/format';
 import ProductCard from '@/components/ProductCard';
 
 export default function WishlistPage() {
-  const { wishlistItems, navigate, addToCart, toggleWishlist } = useStore();
+  const { wishlistItems, navigate } = useStore();
+  const validItems = wishlistItems.filter(item => item.product);
 
-  if (wishlistItems.length === 0) {
+  if (validItems.length === 0) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center max-w-7xl mx-auto px-4">
         <div className="text-center">
@@ -29,11 +30,11 @@ export default function WishlistPage() {
       <div className="mb-8">
         <h1 className="text-4xl font-display text-walnut-900 dark:text-ivory tracking-tight">My Wishlist</h1>
         <div className="mt-3 h-px bg-gradient-to-r from-champagne-400 via-champagne-200 to-transparent" />
-        <p className="text-walnut-500 dark:text-beige-400 mt-4 tracking-wide">{wishlistItems.length} items saved</p>
+        <p className="text-walnut-500 dark:text-beige-400 mt-4 tracking-wide">{validItems.length} items saved</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {wishlistItems.map(item => (
+        {validItems.map(item => (
           <ProductCard key={item.id} product={item.product!} />
         ))}
       </div>

@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown, BookOpen } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
 import type { Product, Category, SortOption } from '@/types';
 import ProductCard from '@/components/ProductCard';
 
 export default function ShopPage() {
-  const { pageProps } = useStore();
+  const { pageProps, setCatalogueOpen } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +128,18 @@ export default function ShopPage() {
         <h1 className="font-display text-4xl sm:text-5xl text-walnut-900 dark:text-cream font-light mb-3">
           {selectedCategory ? categories.find(c => c.slug === selectedCategory)?.name : 'All Collections'}
         </h1>
-        <p className="text-sm text-walnut-500 font-light">{filtered.length} {filtered.length === 1 ? 'piece' : 'pieces'} available</p>
+        <p className="text-sm text-walnut-500 font-light mb-5">{filtered.length} {filtered.length === 1 ? 'piece' : 'pieces'} available</p>
+        
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setCatalogueOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-btn bg-champagne-100 hover:bg-champagne-200 dark:bg-champagne-900/40 dark:hover:bg-champagne-900/60 text-champagne-800 dark:text-champagne-200 text-xs font-medium border border-champagne-300/60 dark:border-champagne-800/40 transition-all duration-300 hover:scale-105"
+          >
+            <BookOpen size={14} />
+            <span>Download PDF Catalogue</span>
+          </button>
+        </div>
+
         <div className="gold-divider w-24 mx-auto mt-6" />
       </div>
 
