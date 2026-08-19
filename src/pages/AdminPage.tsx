@@ -206,17 +206,18 @@ function DashboardSection() {
     })();
   }, []);
 
-  const totalRevenue = useMemo(() => orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total, 0), [orders]);
-  const lowStock = useMemo(() => products.filter(p => p.stock_quantity <= 5).sort((a, b) => a.stock_quantity - b.stock_quantity), [products]);
+  const totalRevenue = useMemo(() => orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + (o?.total ?? 0), 0), [orders]);
+  const lowStock = useMemo(() => products.filter(p => (p.stock_quantity ?? 0) <= 5).sort((a, b) => (a.stock_quantity ?? 0) - (b.stock_quantity ?? 0)), [products]);
   const salesByDay = useMemo(() => {
     const map = new Map<string, number>();
     orders.forEach(o => {
+      if (!o.created_at) return;
       const d = new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-      map.set(d, (map.get(d) ?? 0) + o.total);
+      map.set(d, (map.get(d) ?? 0) + (o?.total ?? 0));
     });
     return Array.from(map.entries()).slice(-7);
   }, [orders]);
-  const maxSale = Math.max(1, ...salesByDay.map(d => d[1]));
+  const maxSale = Math.max(1, ...salesByDay.map(d => d[1] || 0));
 
   if (loading) return <div className="text-walnut-400 font-light">Loading dashboard…</div>;
 
@@ -288,6 +289,7 @@ function OrdersSection() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -311,55 +313,111 @@ function OrdersSection() {
     setOrders(prev => prev.filter(o => o.id !== id));
   };
 
-  const filtered = orders.filter(o =>
-    o.order_number.toLowerCase().includes(search.toLowerCase()) || o.customer_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = orders.filter(o => {
+    const matchesSearch =
+      (o.order_number ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (o.customer_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (o.customer_phone ?? '').toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || o.order_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-4">
       <SectionHeader title="Orders" subtitle={`${orders.length} total orders`} />
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-walnut-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders…" className={inputCls + ' pl-9'} />
+      
+      {/* Search and Status Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-walnut-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders, names, phone…" className={inputCls + ' pl-9'} />
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+          {['all', ...ORDER_STATUSES].map(st => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize whitespace-nowrap transition-colors ${
+                statusFilter === st
+                  ? 'bg-champagne-600 text-ivory'
+                  : 'bg-walnut-800/60 text-walnut-400 hover:text-cream hover:bg-walnut-800'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
       </div>
+
       {loading ? <div className="text-walnut-400 font-light">Loading…</div> : filtered.length === 0 ? <EmptyState icon={ShoppingBag} text="No orders found." /> : (
         <div className="space-y-3">
-          {filtered.map(o => (
-            <div key={o.id} className={cardCls + ' p-4'}>
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                <div><p className="font-display font-medium text-cream">{o.order_number}</p><p className="text-xs text-walnut-400 font-light">{formatDate(o.created_at)} · {o.customer_name} · {o.customer_phone}</p></div>
-                <div className="flex items-center gap-2"><span className={`px-2.5 py-1 rounded-card text-xs font-medium capitalize ${statusColor(o.order_status)}`}>{o.order_status}</span><span className="font-display font-medium text-cream">{formatPrice(o.total)}</span></div>
-              </div>
-              {o.order_items && o.order_items.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {o.order_items.map((it, i) => (
-                    <div key={i} className="flex items-start gap-3 p-2 rounded-card bg-walnut-800/30">
-                      <img src={it.product_image ?? ''} alt="" className="w-10 h-10 rounded-lg object-cover bg-walnut-800 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-beige-300">{it.product_name} ×{it.quantity}</p>
-                        {it.customization_text && <p className="text-[11px] text-champagne-500 mt-0.5">Text: "{it.customization_text}"</p>}
-                        {it.customization_data?.font && <p className="text-[11px] text-walnut-500">Font: {it.customization_data.font.split(',')[0].replace(/'/g, '')}</p>}
-                        {it.customization_data?.photo_transform && (
-                          <p className="text-[11px] text-walnut-500">
-                            Zoom: {it.customization_data.photo_transform.scale.toFixed(1)}x · Rotation: {it.customization_data.photo_transform.rotation}°
-                          </p>
-                        )}
-                      </div>
-                      {it.photo_url && (
-                        <a href={it.photo_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-                          <img src={it.photo_url} alt="Custom" className="w-12 h-12 rounded-lg object-cover border border-champagne-900/30 hover:border-champagne-500 transition-colors" />
-                        </a>
+          {filtered.map(o => {
+            const addr = o.shipping_address as { address_line1?: string; address_line2?: string; city?: string; state?: string; pincode?: string; landmark?: string } | null;
+            return (
+              <div key={o.id} className={cardCls + ' p-4 space-y-3'}>
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-champagne-900/20 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-display font-medium text-cream">{o.order_number}</p>
+                      {o.payment_method === 'whatsapp' && (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-medium">WhatsApp Order</span>
+                      )}
+                      {o.payment_method && o.payment_method !== 'whatsapp' && (
+                        <span className="px-2 py-0.5 rounded-md bg-walnut-800 text-cream/70 text-[10px] font-medium uppercase">{o.payment_method}</span>
                       )}
                     </div>
-                  ))}
+                    <p className="text-xs text-walnut-400 font-light mt-0.5">{formatDate(o.created_at)} · <strong>{o.customer_name}</strong> · {o.customer_phone}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-card text-xs font-medium capitalize ${statusColor(o.order_status)}`}>{o.order_status}</span>
+                    <span className="font-display font-medium text-cream">{formatPrice(o.total)}</span>
+                  </div>
                 </div>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-walnut-400 font-light">Update status:</span>
-                <select value={o.order_status} onChange={e => updateStatus(o.id, e.target.value)} className="px-3 py-1.5 rounded-card bg-walnut-800/50 text-xs text-cream outline-none focus:ring-1 focus:ring-champagne-500 border border-champagne-900/30">{ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}</select>
-                <button onClick={() => deleteOrder(o.id)} className="ml-auto p-1.5 rounded-lg hover:bg-rose-900/20 text-rose-500"><Trash2 size={14} /></button>
+
+                {/* Delivery Address Details */}
+                {addr && (
+                  <div className="p-2.5 rounded-lg bg-walnut-950/40 border border-champagne-900/15 text-xs text-walnut-400 font-light">
+                    <span className="font-medium text-beige-300">Delivery Address: </span>
+                    <span>{addr.address_line1 || ''} {addr.address_line2 ? `, ${addr.address_line2}` : ''} {addr.city ? `, ${addr.city}` : ''} {addr.state ? `, ${addr.state}` : ''} {addr.pincode ? ` - ${addr.pincode}` : ''}</span>
+                    {addr.landmark && <span className="text-champagne-400"> (Landmark: {addr.landmark})</span>}
+                  </div>
+                )}
+
+                {/* Order Items */}
+                {o.order_items && o.order_items.length > 0 && (
+                  <div className="space-y-2">
+                    {o.order_items.map((it, i) => (
+                      <div key={i} className="flex items-start gap-3 p-2 rounded-card bg-walnut-800/30">
+                        <img src={it.product_image ?? ''} alt="" className="w-10 h-10 rounded-lg object-cover bg-walnut-800 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-beige-300 font-medium">{it.product_name} ×{it.quantity} — {formatPrice(it.total_price ?? (it.unit_price * it.quantity))}</p>
+                          {it.customization_text && <p className="text-[11px] text-champagne-500 mt-0.5">Custom Text: "{it.customization_text}"</p>}
+                          {it.customization_data?.font && <p className="text-[11px] text-walnut-500">Font: {it.customization_data.font.split(',')[0].replace(/'/g, '')}</p>}
+                          {it.customization_data?.photo_transform && (
+                            <p className="text-[11px] text-walnut-500">
+                              Zoom: {it.customization_data.photo_transform.scale.toFixed(1)}x · Rotation: {it.customization_data.photo_transform.rotation}°
+                            </p>
+                          )}
+                        </div>
+                        {it.photo_url && (
+                          <a href={it.photo_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                            <img src={it.photo_url} alt="Custom upload" className="w-12 h-12 rounded-lg object-cover border border-champagne-900/30 hover:border-champagne-500 transition-colors" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Status Update & Actions */}
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <span className="text-xs text-walnut-400 font-light">Update status:</span>
+                  <select value={o.order_status} onChange={e => updateStatus(o.id, e.target.value)} className="px-3 py-1.5 rounded-card bg-walnut-800/50 text-xs text-cream outline-none focus:ring-1 focus:ring-champagne-500 border border-champagne-900/30">{ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                  <button onClick={() => deleteOrder(o.id)} className="ml-auto p-1.5 rounded-lg hover:bg-rose-900/20 text-rose-500 transition-colors" title="Delete order"><Trash2 size={14} /></button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1160,8 +1218,8 @@ function AnalyticsSection() {
     })();
   }, []);
 
-  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + o.total, 0), [orders]);
-  const paidRevenue = useMemo(() => orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total, 0), [orders]);
+  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + (o?.total ?? 0), 0), [orders]);
+  const paidRevenue = useMemo(() => orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + (o?.total ?? 0), 0), [orders]);
   const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
   const pendingOrders = orders.filter(o => o.order_status === 'pending').length;
   const deliveredOrders = orders.filter(o => o.order_status === 'delivered').length;
@@ -1171,10 +1229,11 @@ function AnalyticsSection() {
     const map = new Map<string, { name: string; qty: number; revenue: number }>();
     orders.forEach(o => {
       o.order_items?.forEach(it => {
-        const existing = map.get(it.product_name) ?? { name: it.product_name, qty: 0, revenue: 0 };
-        existing.qty += it.quantity;
-        existing.revenue += it.total_price;
-        map.set(it.product_name, existing);
+        const pName = it.product_name || 'Personalized Gift';
+        const existing = map.get(pName) ?? { name: pName, qty: 0, revenue: 0 };
+        existing.qty += it.quantity ?? 1;
+        existing.revenue += (it.total_price ?? ((it.unit_price ?? 0) * (it.quantity ?? 1)));
+        map.set(pName, existing);
       });
     });
     return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
@@ -1183,12 +1242,13 @@ function AnalyticsSection() {
   const salesByStatus = useMemo(() => {
     const map = new Map<string, number>();
     orders.forEach(o => {
-      map.set(o.order_status, (map.get(o.order_status) ?? 0) + o.total);
+      const statusKey = o.order_status || 'pending';
+      map.set(statusKey, (map.get(statusKey) ?? 0) + (o?.total ?? 0));
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [orders]);
 
-  const maxStatusRevenue = Math.max(1, ...salesByStatus.map(s => s[1]));
+  const maxStatusRevenue = Math.max(1, ...salesByStatus.map(s => s[1] || 0));
 
   if (loading) return <div className="text-walnut-400 font-light">Loading analytics…</div>;
 
