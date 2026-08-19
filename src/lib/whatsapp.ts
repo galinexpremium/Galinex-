@@ -7,9 +7,13 @@ export function buildDirectWhatsAppUrl(message: string, number: string = WHATSAP
   return `https://wa.me/${sanitized}?text=${encodeURIComponent(message)}`;
 }
 
-export function openWhatsApp(message: string, number: string = WHATSAPP_NUMBER): void {
+export function openWhatsApp(message: string, number: string = WHATSAPP_NUMBER): Window | null {
   const url = buildDirectWhatsAppUrl(message, number);
-  window.open(url, '_blank');
+  try {
+    return window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    return null;
+  }
 }
 
 export function buildWhatsAppOrderMessage(
@@ -25,7 +29,7 @@ export function buildWhatsAppOrderMessage(
 ): string {
   const lines: string[] = [];
   lines.push('*GALINEX LUXURY GIFTS - NEW ORDER*');
-  if (orderNumber) lines.push(`Order ID: ${orderNumber}`);
+  if (orderNumber) lines.push(`Order ID: *${orderNumber}*`);
   lines.push('----------------------------------------');
   lines.push('*Customer Details:*');
   lines.push(`Name: ${address.full_name}`);
@@ -40,11 +44,12 @@ export function buildWhatsAppOrderMessage(
   lines.push('');
   lines.push('*Ordered Items:*');
   items.forEach((item, i) => {
+    const itemPrice = item.product ? getEffectivePrice(item.product) : 0;
     lines.push(`${i + 1}. *${item.product?.name || 'Product'}*`);
     if (item.product?.dimensions) lines.push(`   Dimensions: ${item.product.dimensions}`);
     if (item.variant_name) lines.push(`   Variant: ${item.variant_name}`);
     lines.push(`   Quantity: ${item.quantity}`);
-    lines.push(`   Price: ${formatPrice((item.product?.sale_price ?? item.product?.base_price ?? 0) * item.quantity)}`);
+    lines.push(`   Price: ${formatPrice(itemPrice * item.quantity)}`);
     if (item.customization_text) lines.push(`   Engraving Text: "${item.customization_text}"`);
     if (item.customization_data?.filter) lines.push(`   Engraving Style: ${item.customization_data.filter.toUpperCase()}`);
     if (item.photo_url) lines.push(`   Photo Upload: Attached / Confirmed`);
