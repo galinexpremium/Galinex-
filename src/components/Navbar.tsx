@@ -8,7 +8,7 @@ import type { Product } from '@/types';
 import { formatPrice, getProductImageUrl } from '@/lib/format';
 
 export default function Navbar() {
-  const { navigate, currentPage, cartCount, wishlistCount, compareCount, isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen, setCatalogueOpen } = useStore();
+  const { navigate, currentPage, cartCount, wishlistCount, compareCount, isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen, setCatalogueOpen, cartPulse } = useStore();
   const { user, isAdmin } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,13 +53,12 @@ export default function Navbar() {
         setSearchOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
+    if (isSearchOpen) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [setSearchOpen]);
+  }, [isSearchOpen, setSearchOpen]);
 
   const navLinks = [
-    { label: 'Home', page: 'home' as const },
-    { label: 'Collections', page: 'shop' as const },
+    { label: 'Shop', page: 'shop' as const },
     { label: 'About', page: 'about' as const },
     { label: 'Gallery', page: 'gallery' as const },
     { label: 'Reviews', page: 'reviews' as const },
@@ -69,82 +68,93 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Luxury Top Bar */}
-      <div className="bg-walnut-950 text-cream/70 text-[10px] tracking-luxury uppercase py-3 px-4 text-center font-light hidden md:block">
-        Crafted with Precision
-        <span className="mx-4 text-gold-500">•</span>
-        Premium Personalized Gifts
-        <span className="mx-4 text-gold-500">•</span>
-        Pan India Delivery
-      </div>
+      <header
+        className={`sticky top-0 z-40 transition-all duration-500 ${
+          scrolled
+            ? 'glass shadow-lg border-b border-gold-200/40 dark:border-gold-900/30'
+            : 'bg-transparent'
+        }`}
+      >
+        {/* Top Banner */}
+        <div className="bg-gradient-to-r from-walnut-950 via-walnut-900 to-walnut-950 text-cream/90 text-xs py-2 px-4 border-b border-gold-500/10">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <a href={`tel:${BRAND_PHONE}`} className="flex items-center gap-1.5 hover:text-gold-400 transition-colors">
+                <Phone size={12} className="text-gold-500" />
+                <span className="font-light">{BRAND_PHONE}</span>
+              </a>
+              <span className="hidden md:inline text-gold-500/40">|</span>
+              <span className="hidden md:inline text-gold-400/90 font-light">Pan India Express Delivery</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setCatalogueOpen(true)}
+                className="flex items-center gap-1 text-gold-400 hover:text-gold-300 transition-colors font-medium cursor-pointer"
+              >
+                <BookOpen size={12} />
+                <span>PDF Catalogue</span>
+              </button>
+              <span className="text-gold-500/40">|</span>
+              <button
+                onClick={() => navigate('track-order')}
+                className="text-cream/70 hover:text-gold-400 transition-colors cursor-pointer"
+              >
+                Track Order
+              </button>
+            </div>
+          </div>
+        </div>
 
-      <header className={`sticky top-0 z-50 transition-all duration-700 ${
-        scrolled
-          ? 'glass shadow-md py-0'
-          : 'bg-ivory dark:bg-walnut-950 border-b border-gold-200/30 dark:border-gold-900/20'
-      }`}>
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+        {/* Main Nav */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2.5 -ml-2 text-walnut-800 dark:text-cream hover:text-gold-600 transition-colors duration-300"
-              aria-label="Menu"
+              className="lg:hidden p-2 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors"
+              aria-label="Toggle menu"
             >
-              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Logo */}
+            {/* Brand Logo */}
             <button
               onClick={() => navigate('home')}
-              className="flex items-center gap-2 group"
+              className="flex flex-col items-center group cursor-pointer"
             >
-              <span className="text-2xl lg:text-3xl font-display font-semibold tracking-wider2 text-walnut-900 dark:text-cream group-hover:text-gold-500 transition-colors duration-700">
+              <span className="font-display text-2xl sm:text-3xl tracking-[0.25em] text-walnut-900 dark:text-cream font-medium group-hover:text-gold-600 transition-colors duration-300">
                 {BRAND_NAME}
+              </span>
+              <span className="text-[9px] tracking-[0.35em] text-gold-600 dark:text-gold-400 font-light uppercase -mt-1">
+                Luxury Personalized Gifts
               </span>
             </button>
 
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-8 xl:gap-10">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map(link => (
                 <button
                   key={link.page}
                   onClick={() => navigate(link.page)}
-                  className={`text-[13px] font-medium tracking-wide transition-colors duration-300 relative group ${
+                  className={`text-xs uppercase tracking-[0.2em] transition-all duration-300 py-2 relative cursor-pointer ${
                     currentPage === link.page
-                      ? 'text-gold-600'
-                      : 'text-walnut-700 dark:text-cream/70 hover:text-gold-600'
+                      ? 'text-gold-600 dark:text-gold-400 font-medium'
+                      : 'text-walnut-700 dark:text-cream/70 hover:text-gold-600 dark:hover:text-gold-400 font-light'
                   }`}
                 >
                   {link.label}
-                  <span className={`absolute -bottom-1.5 left-0 h-px bg-gold-500 transition-all duration-500 ${
-                    currentPage === link.page ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`} />
+                  {currentPage === link.page && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-gold-500 to-transparent" />
+                  )}
                 </button>
               ))}
-              <button
-                onClick={() => setCatalogueOpen(true)}
-                className="text-[13px] font-medium tracking-wide text-champagne-700 dark:text-champagne-400 hover:text-champagne-600 flex items-center gap-1.5 px-3 py-1 rounded-full bg-champagne-50 dark:bg-champagne-900/30 border border-champagne-200/60 dark:border-champagne-800/40 transition-all duration-300 hover:scale-105"
-                title="View & Download PDF Catalogue"
-              >
-                <BookOpen size={14} />
-                <span>Catalogue</span>
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => navigate('admin')}
-                  className={`text-[13px] font-medium tracking-wide transition-colors ${currentPage === 'admin' ? 'text-gold-600' : 'text-gold-700 dark:text-gold-500 hover:text-gold-600'}`}
-                >
-                  Admin
-                </button>
-              )}
-            </div>
+            </nav>
 
-            {/* Actions */}
-            <div className="flex items-center gap-0.5 sm:gap-1">
+            {/* Action Icons */}
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => setSearchOpen(!isSearchOpen)}
-                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300"
+                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 cursor-pointer"
                 aria-label="Search"
               >
                 <Search size={20} />
@@ -152,7 +162,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => navigate('compare')}
-                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative hidden sm:block"
+                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative hidden sm:block cursor-pointer"
                 aria-label="Compare"
               >
                 <BarChart3 size={20} />
@@ -165,7 +175,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => navigate('wishlist')}
-                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative"
+                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative cursor-pointer"
                 aria-label="Wishlist"
               >
                 <Heart size={20} />
@@ -178,7 +188,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => navigate(user ? 'account' : 'login')}
-                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 hidden sm:block"
+                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 hidden sm:block cursor-pointer"
                 aria-label="Account"
               >
                 <User size={20} />
@@ -186,18 +196,21 @@ export default function Navbar() {
 
               <button
                 onClick={() => navigate('cart')}
-                className="p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative"
+                className={`p-2.5 text-walnut-700 dark:text-cream/70 hover:text-gold-600 transition-colors duration-300 relative cursor-pointer ${
+                  cartPulse ? 'animate-cart-bounce text-gold-500' : ''
+                }`}
                 aria-label="Cart"
               >
                 <ShoppingBag size={20} />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-gold-600 text-ivory text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className={`absolute -top-0.5 -right-0.5 bg-gold-600 text-ivory text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center transition-transform ${cartPulse ? 'scale-125 bg-gold-500' : 'scale-100'}`}>
                     {cartCount}
                   </span>
                 )}
               </button>
             </div>
           </div>
+        </div>
 
           {/* Search Bar */}
           {isSearchOpen && (
@@ -244,7 +257,6 @@ export default function Navbar() {
               </div>
             </div>
           )}
-        </nav>
 
         {/* Mobile Menu */}
         {isMenuOpen && (

@@ -23,14 +23,19 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-cream dark:bg-walnut-800 flex items-center justify-center text-champagne-600">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center animate-fade-in">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-walnut-900/60 border border-gold-500/20 flex items-center justify-center text-gold-400 shadow-xl">
           <ShoppingBag size={32} />
         </div>
-        <h1 className="font-display text-3xl text-walnut-900 dark:text-ivory mb-3">Your shopping bag is empty</h1>
-        <p className="text-walnut-500 dark:text-beige-400 mb-8 font-light">Explore our curated collection of personalized luxury gifts</p>
-        <button onClick={() => navigate('shop')} className="px-8 py-3.5 bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium text-sm tracking-wide rounded-card transition-colors">
-          Discover Collections
+        <h1 className="font-display text-3xl text-walnut-900 dark:text-ivory mb-3">Your collection is waiting</h1>
+        <p className="text-walnut-500 dark:text-beige-400 mb-8 font-light max-w-md mx-auto">
+          Explore our curated catalogue of personalized luxury crystals, wooden plaques, and custom keepsakes.
+        </p>
+        <button
+          onClick={() => navigate('shop')}
+          className="px-8 py-3.5 bg-gold-600 hover:bg-gold-500 text-ivory font-semibold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md cursor-pointer active:scale-95"
+        >
+          Explore Collection
         </button>
       </div>
     );

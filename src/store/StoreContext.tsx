@@ -1,7 +1,20 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { Product, CartItem, WishlistItem, Page, Coupon, ShippingAddress, CustomizationData } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { getEffectivePrice } from '@/lib/format';
+import { getEffectivePrice, getProductImageUrl } from '@/lib/format';
+
+export interface ToastNotification {
+  id: string;
+  type: 'success' | 'info' | 'warning' | 'error';
+  title: string;
+  subtitle?: string;
+  price?: number | null;
+  image_url?: string | null;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
 
 interface StoreContextValue {
   // Routing
@@ -13,11 +26,17 @@ interface StoreContextValue {
   cartItems: CartItem[];
   cartCount: number;
   cartSubtotal: number;
+  cartPulse: boolean;
   addToCart: (product: Product, opts?: { quantity?: number; variant?: string; customization?: string; photo?: string; customizationData?: CustomizationData }) => void;
   updateCartQuantity: (cartId: string, quantity: number) => void;
   removeFromCart: (cartId: string) => void;
   saveForLater: (cartId: string, saved: boolean) => void;
   clearCart: () => void;
+
+  // Toast
+  toast: ToastNotification | null;
+  showToast: (opts: Omit<ToastNotification, 'id'>) => void;
+  hideToast: () => void;
 
   // Wishlist
   wishlistItems: WishlistItem[];
@@ -131,6 +150,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isCatalogueOpen, setCatalogueOpen] = useState(false);
   const [sessionId] = useState(getSessionId);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
+  const [cartPulse, setCartPulse] = useState(false);
+
+  const showToast = useCallback((opts: Omit<ToastNotification, 'id'>) => {
+    setToast({
+      ...opts,
+      id: Math.random().toString(36).substring(2),
+    });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   // Load persisted state
   useEffect(() => {
@@ -203,6 +235,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const customizationText = customizationData?.text || customization;
     const photoUrl = customizationData?.photo_url || photo;
 
+    setCartPulse(true);
+    setTimeout(() => setCartPulse(false), 500);
+
+    showToast({
+      type: 'success',
+      title: 'Added to your cart',
+      subtitle: product.name,
+      price: product.sale_price ?? product.base_price,
+      image_url: getProductImageUrl(product),
+      action: {
+        label: 'VIEW CART',
+        onClick: () => navigate('cart'),
+      },
+    });
+
     setCartItems(prev => {
       const existing = prev.find(i =>
         i.product_id === product.id &&
@@ -229,7 +276,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       return [...prev, newItem];
     });
-  }, []);
+  }, [showToast, navigate]);
 
   const updateCartQuantity = useCallback((cartId: string, quantity: number) => {
     if (quantity < 1) return;
@@ -252,10 +299,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const toggleWishlist = useCallback((product: Product) => {
     setWishlistItems(prev => {
       const exists = prev.find(i => i.product_id === product.id);
-      if (exists) return prev.filter(i => i.product_id !== product.id);
+      if (exists) {
+        showToast({
+          type: 'info',
+          title: 'Removed from Wishlist',
+          subtitle: product.name,
+        });
+        return prev.filter(i => i.product_id !== product.id);
+      }
+      showToast({
+        type: 'success',
+        title: 'Saved to Wishlist',
+        subtitle: product.name,
+        image_url: getProductImageUrl(product),
+        action: {
+          label: 'VIEW WISHLIST',
+          onClick: () => navigate('wishlist'),
+        },
+      });
       return [...prev, { id: 'wl_' + Math.random().toString(36).substring(2), product_id: product.id, product }];
     });
-  }, []);
+  }, [showToast, navigate]);
 
   const isInWishlist = useCallback((productId: string) => {
     return wishlistItems.some(i => i.product_id === productId);
@@ -336,8 +400,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreContextValue = {
     currentPage, pageProps, navigate,
-    cartItems: activeCartItems, cartCount, cartSubtotal,
+    cartItems: activeCartItems, cartCount, cartSubtotal, cartPulse,
     addToCart, updateCartQuantity, removeFromCart, saveForLater, clearCart,
+    toast, showToast, hideToast,
     wishlistItems, wishlistCount: wishlistItems.length, toggleWishlist, isInWishlist,
     compareItems, compareCount: compareItems.length, toggleCompare, isInCompare, clearCompare,
     recentlyViewed, addRecentlyViewed,

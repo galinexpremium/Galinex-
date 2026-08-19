@@ -174,18 +174,35 @@ export default function ShopPage() {
         {/* Products Grid */}
         <div className="flex-1">
           {fetchError ? (
-            <div className="text-center py-20">
-              <p className="text-walnut-400 font-display text-2xl mb-4">Unable to load products. Please try again.</p>
-              <button onClick={() => window.location.reload()} className="px-8 py-3 bg-walnut-900 dark:bg-cream text-ivory dark:text-walnut-900 text-sm font-medium rounded-card">Retry</button>
+            <div className="text-center py-20 bg-[#1A120C]/40 border border-gold-500/20 rounded-2xl p-8">
+              <p className="text-gold-400 font-display text-2xl mb-2">Unable to load the collection</p>
+              <p className="text-xs text-walnut-400 font-light mb-6">Please check your connection and try again.</p>
+              <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-gold-600 hover:bg-gold-500 text-ivory text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer">
+                Try Again
+              </button>
             </div>
           ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-[4/5] rounded-2xl bg-cream dark:bg-walnut-800 animate-pulse" />)}
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div key={i} className="bg-walnut-900/40 rounded-2xl overflow-hidden border border-gold-500/10 flex flex-col justify-between">
+                  <div className="w-full aspect-[4/5] skeleton-shimmer" />
+                  <div className="p-3.5 space-y-2.5">
+                    <div className="h-3 bg-walnut-800/80 rounded w-1/3 skeleton-shimmer" />
+                    <div className="h-4 bg-walnut-800/80 rounded w-4/5 skeleton-shimmer" />
+                    <div className="h-3 bg-walnut-800/80 rounded w-1/2 skeleton-shimmer" />
+                    <div className="h-8 bg-walnut-800/80 rounded-lg w-full skeleton-shimmer mt-2" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-walnut-400 font-display text-2xl mb-4">No pieces found matching your selection.</p>
-              <button onClick={() => { setSelectedCategory(null); setSelectedOccasions([]); setSelectedMaterials([]); setPriceRange([0, 100000]); setSearchTerm(''); }} className="px-8 py-3 bg-walnut-900 dark:bg-cream text-ivory dark:text-walnut-900 text-sm font-medium rounded-card hover:bg-champagne-600 dark:hover:bg-champagne-500 transition-colors">
+            <div className="text-center py-20 bg-[#1A120C]/30 border border-gold-500/10 rounded-2xl p-8">
+              <p className="text-cream font-display text-2xl mb-2">No pieces found</p>
+              <p className="text-xs text-walnut-400 font-light mb-6">Try searching another product name, material, or exploring our complete collections.</p>
+              <button
+                onClick={() => { setSelectedCategory(null); setSelectedOccasions([]); setSelectedMaterials([]); setPriceRange([0, 100000]); setSearchTerm(''); }}
+                className="px-6 py-2.5 bg-gold-600 hover:bg-gold-500 text-ivory text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+              >
                 Clear All Filters
               </button>
             </div>

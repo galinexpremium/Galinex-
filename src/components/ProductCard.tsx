@@ -1,4 +1,5 @@
-import { Heart, BarChart3, Eye, Star, ShoppingBag, Sparkles, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, BarChart3, Eye, Star, ShoppingBag, MessageCircle, Check } from 'lucide-react';
 import type { Product } from '@/types';
 import { useStore } from '@/store/StoreContext';
 import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor, getProductImageUrl } from '@/lib/format';
@@ -6,12 +7,21 @@ import { buildDirectWhatsAppUrl, buildMdfQuoteRequestMessage, buildProductInquir
 
 export default function ProductCard({ product }: { product: Product }) {
   const { navigate, addToCart, toggleWishlist, isInWishlist, toggleCompare, isInCompare } = useStore();
+  const [isAdded, setIsAdded] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const inWishlist = isInWishlist(product.id);
   const inCompare = isInCompare(product.id);
   const price = getEffectivePrice(product);
   const isPriced = price > 0;
   const discount = isPriced ? getDiscountPercent(product) : 0;
   const imageUrl = getProductImageUrl(product);
+
+  const handleAddToCart = () => {
+    if (isAdded) return;
+    setIsAdded(true);
+    addToCart(product);
+    setTimeout(() => setIsAdded(false), 1400);
+  };
 
   const whatsappInquiryUrl = buildDirectWhatsAppUrl(
     !isPriced
@@ -20,9 +30,14 @@ export default function ProductCard({ product }: { product: Product }) {
   );
 
   return (
-    <div className="group relative bg-ivory dark:bg-walnut-900/90 rounded-2xl overflow-hidden transition-all duration-500 shadow-sm hover:shadow-xl hover:-translate-y-1.5 border border-gold-200/40 dark:border-gold-900/30 hover:border-gold-400/60 dark:hover:border-gold-700/50 flex flex-col justify-between">
+    <div className="group relative bg-ivory dark:bg-walnut-900/90 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 border border-gold-200/40 dark:border-gold-900/30 hover:border-gold-400/60 dark:hover:border-gold-700/50 flex flex-col justify-between">
       {/* Top Media Area */}
       <div className="relative w-full aspect-[4/5] bg-[#0d0b0a] overflow-hidden">
+        {/* Skeleton while loading */}
+        {!imgLoaded && (
+          <div className="absolute inset-0 skeleton-shimmer" />
+        )}
+
         {/* Badge */}
         {product.badge && (
           <div className={`absolute top-3 left-3 z-10 px-2.5 py-1 text-[8px] sm:text-[9px] font-semibold text-ivory uppercase tracking-wider rounded-md shadow-md ${badgeColor(product.badge)}`}>
@@ -40,7 +55,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Wishlist Heart */}
         <button
           onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-          className={`absolute ${discount > 0 ? 'top-10' : 'top-3'} right-3 z-10 w-8 h-8 rounded-full bg-walnut-950/70 backdrop-blur-md flex items-center justify-center transition-all duration-300 ${inWishlist ? 'text-gold-500' : 'text-ivory/80 hover:text-gold-400 hover:scale-110'}`}
+          className={`absolute ${discount > 0 ? 'top-10' : 'top-3'} right-3 z-10 w-8 h-8 rounded-full bg-walnut-950/70 backdrop-blur-md flex items-center justify-center transition-all duration-300 cursor-pointer ${inWishlist ? 'text-gold-500 scale-110' : 'text-ivory/80 hover:text-gold-400 hover:scale-110'}`}
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <Heart size={14} fill={inWishlist ? 'currentColor' : 'none'} />
@@ -50,14 +65,14 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="absolute right-3 bottom-3 z-10 flex flex-col gap-1.5 translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex">
           <button
             onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-            className={`w-8 h-8 rounded-full bg-walnut-950/80 backdrop-blur-md flex items-center justify-center transition-colors ${inCompare ? 'text-gold-500' : 'text-ivory/80 hover:text-gold-400'}`}
+            className={`w-8 h-8 rounded-full bg-walnut-950/80 backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer ${inCompare ? 'text-gold-500' : 'text-ivory/80 hover:text-gold-400'}`}
             title="Compare"
           >
             <BarChart3 size={14} />
           </button>
           <button
             onClick={() => navigate('product', { slug: product.slug })}
-            className="w-8 h-8 rounded-full bg-walnut-950/80 backdrop-blur-md text-ivory/80 hover:text-gold-400 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full bg-walnut-950/80 backdrop-blur-md text-ivory/80 hover:text-gold-400 flex items-center justify-center transition-colors cursor-pointer"
             title="Quick view"
           >
             <Eye size={14} />
@@ -73,8 +88,10 @@ export default function ProductCard({ product }: { product: Product }) {
             src={imageUrl}
             alt={product.name}
             loading="lazy"
-            className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-700 group-hover:scale-105"
+            onLoad={() => setImgLoaded(true)}
+            className={`w-full h-full object-contain p-2 sm:p-3 transition-all duration-500 group-hover:scale-[1.02] ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             onError={(e) => {
+              setImgLoaded(true);
               (e.target as HTMLImageElement).src = '/products/3d-crystal-gifts/5x5x8-3d-crystal-single-image.webp';
             }}
           />
@@ -101,7 +118,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Title */}
           <button
             onClick={() => navigate('product', { slug: product.slug })}
-            className="text-left w-full block mb-1 group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors"
+            className="text-left w-full block mb-1 group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors cursor-pointer"
           >
             <h3 className="font-display text-sm sm:text-base text-walnut-900 dark:text-cream leading-snug line-clamp-2 font-medium">
               {product.name}
@@ -132,16 +149,31 @@ export default function ProductCard({ product }: { product: Product }) {
             {isPriced ? (
               <>
                 <button
-                  onClick={() => addToCart(product)}
-                  className="w-full py-2 sm:py-2.5 bg-gold-600 hover:bg-gold-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm"
+                  onClick={handleAddToCart}
+                  disabled={isAdded}
+                  className={`w-full py-2 sm:py-2.5 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] cursor-pointer ${
+                    isAdded
+                      ? 'bg-emerald-600 text-ivory'
+                      : 'bg-gold-600 hover:bg-gold-500'
+                  }`}
                 >
-                  <ShoppingBag size={13} /> Add to Cart
+                  {isAdded ? (
+                    <>
+                      <Check size={14} className="animate-scale-in" />
+                      <span>Added to Cart</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={13} />
+                      <span>Add to Cart</span>
+                    </>
+                  )}
                 </button>
                 <a
                   href={whatsappInquiryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-1.5 sm:py-2 border border-emerald-600/50 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-ivory text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5"
+                  className="w-full py-1.5 sm:py-2 border border-emerald-600/50 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-ivory text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
                 >
                   <MessageCircle size={13} /> WhatsApp Inquiry
                 </a>
@@ -152,13 +184,13 @@ export default function ProductCard({ product }: { product: Product }) {
                   href={whatsappInquiryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm"
+                  className="w-full py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] cursor-pointer"
                 >
                   <MessageCircle size={13} /> Inquire on WhatsApp
                 </a>
                 <button
                   onClick={() => navigate('product', { slug: product.slug })}
-                  className="w-full py-1.5 sm:py-2 border border-gold-400/40 hover:border-gold-500 text-walnut-800 dark:text-cream text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5"
+                  className="w-full py-1.5 sm:py-2 border border-gold-400/40 hover:border-gold-500 text-walnut-800 dark:text-cream text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
                 >
                   <Eye size={13} /> View Catalogue Options
                 </button>

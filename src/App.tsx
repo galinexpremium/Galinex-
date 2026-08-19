@@ -24,32 +24,54 @@ const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const TrackOrderPage = lazy(() => import('@/pages/TrackOrderPage'));
 import PdfCatalogueModal from '@/components/PdfCatalogueModal';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import Toast from '@/components/Toast';
+
+function LuxuryLoader() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center gap-3 animate-fade-in">
+        <span className="font-display text-2xl tracking-[0.3em] text-gold-400 font-light">
+          GALINEX
+        </span>
+        <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-gold-500 to-transparent animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 function PageRouter() {
   const { currentPage } = useStore();
 
-  switch (currentPage) {
-    case 'home': return <HomePage />;
-    case 'shop': return <ShopPage />;
-    case 'product': return <ProductDetailPage />;
-    case 'cart': return <CartPage />;
-    case 'checkout': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><CheckoutPage /></Suspense>;
-    case 'wishlist': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><WishlistPage /></Suspense>;
-    case 'compare': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><ComparePage /></Suspense>;
-    case 'login': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><AuthPage mode="login" /></Suspense>;
-    case 'register': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><AuthPage mode="register" /></Suspense>;
-    case 'account': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><AccountPage /></Suspense>;
-    case 'admin': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><AdminPage /></Suspense>;
-    case 'about': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><AboutPage /></Suspense>;
-    case 'gallery': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><GalleryPage /></Suspense>;
-    case 'reviews': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><ReviewsPage /></Suspense>;
-    case 'faq': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><FAQPage /></Suspense>;
-    case 'contact': return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><ContactPage /></Suspense>;
-    case 'track-order':
-    case 'orders':
-      return <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-walnut-400">Loading…</div>}><TrackOrderPage /></Suspense>;
-    default: return <HomePage />;
-  }
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'home': return <HomePage />;
+      case 'shop': return <ShopPage />;
+      case 'product': return <ProductDetailPage />;
+      case 'cart': return <CartPage />;
+      case 'checkout': return <Suspense fallback={<LuxuryLoader />}><CheckoutPage /></Suspense>;
+      case 'wishlist': return <Suspense fallback={<LuxuryLoader />}><WishlistPage /></Suspense>;
+      case 'compare': return <Suspense fallback={<LuxuryLoader />}><ComparePage /></Suspense>;
+      case 'login': return <Suspense fallback={<LuxuryLoader />}><AuthPage mode="login" /></Suspense>;
+      case 'register': return <Suspense fallback={<LuxuryLoader />}><AuthPage mode="register" /></Suspense>;
+      case 'account': return <Suspense fallback={<LuxuryLoader />}><AccountPage /></Suspense>;
+      case 'admin': return <Suspense fallback={<LuxuryLoader />}><AdminPage /></Suspense>;
+      case 'about': return <Suspense fallback={<LuxuryLoader />}><AboutPage /></Suspense>;
+      case 'gallery': return <Suspense fallback={<LuxuryLoader />}><GalleryPage /></Suspense>;
+      case 'reviews': return <Suspense fallback={<LuxuryLoader />}><ReviewsPage /></Suspense>;
+      case 'faq': return <Suspense fallback={<LuxuryLoader />}><FAQPage /></Suspense>;
+      case 'contact': return <Suspense fallback={<LuxuryLoader />}><ContactPage /></Suspense>;
+      case 'track-order':
+      case 'orders':
+        return <Suspense fallback={<LuxuryLoader />}><TrackOrderPage /></Suspense>;
+      default: return <HomePage />;
+    }
+  };
+
+  return (
+    <div key={currentPage} className="page-enter">
+      {renderContent()}
+    </div>
+  );
 }
 
 const META: Record<string, { title: string; description: string }> = {
@@ -136,6 +158,7 @@ function AppContent() {
       <Footer />
       <FloatingActions />
       <MobileNav />
+      <Toast />
       <PdfCatalogueModal isOpen={isCatalogueOpen} onClose={() => setCatalogueOpen(false)} />
     </div>
   );

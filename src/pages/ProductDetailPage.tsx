@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Star, Heart, BarChart3, ShoppingBag, Share2, Truck, Shield, RefreshCw, ChevronRight, Plus, Minus, MessageCircle, Check, X } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
@@ -24,19 +24,51 @@ export default function ProductDetailPage() {
   const [reviewTab, setReviewTab] = useState<'reviews' | 'write'>('reviews');
   const [newReview, setNewReview] = useState({ reviewer_name: '', reviewer_email: '', rating: 5, comment: '', title: '' });
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+  const [isProcessingBuyNow, setIsProcessingBuyNow] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    const handleScroll = () => {
+      if (actionsRef.current) {
+        const rect = actionsRef.current.getBoundingClientRect();
+        setShowStickyBar(rect.bottom < 0);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: prod } = await supabase.from('products').select('*, category:categories(*)').eq('slug', slug).eq('is_active', true).maybeSingle();
-      if (!prod) { setLoading(false); return; }
-      const p = prod as Product;
+      const { data } = await supabase
+        .from('products')
+        .select('*, category:categories(*)')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (!data) {
+        setProduct(null);
+        setLoading(false);
+        return;
+      }
+
+      const p = data as Product;
       setProduct(p);
-      addRecentlyViewed(p);
-      const defaultImg = getProductImageUrl(p);
-      const imgs = [p.image_url || defaultImg].filter(Boolean) as string[];
-      const { data: imgData } = await supabase.from('product_images').select('*').eq('product_id', p.id).order('sort_order');
+
+      const imgs: string[] = [];
+      const primaryUrl = getProductImageUrl(p);
+      imgs.push(primaryUrl);
+
+      const { data: imgData } = await supabase
+        .from('product_images')
+        .select('*')
+        .eq('product_id', p.id)
+        .order('sort_order');
+
       if (imgData) imgData.forEach(i => { if (!imgs.includes(i.image_url)) imgs.push(i.image_url); });
       setImages(imgs);
       const { data: revData } = await supabase.from('reviews').select('*').eq('product_id', p.id).eq('is_approved', true).order('created_at', { ascending: false });
@@ -50,18 +82,24 @@ export default function ProductDetailPage() {
   }, [slug]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isAdded) return;
+    setIsAdded(true);
     addToCart(product, {
       quantity,
       customization: customizationData?.text || undefined,
       photo: customizationData?.photo_url || undefined,
       customizationData: customizationData ?? undefined,
     });
+    setTimeout(() => setIsAdded(false), 1400);
   };
 
   const handleBuyNow = () => {
+    if (!product || isProcessingBuyNow) return;
+    setIsProcessingBuyNow(true);
     handleAddToCart();
-    navigate('checkout');
+    setTimeout(() => {
+      navigate('checkout');
+    }, 250);
   };
 
   const handleWhatsAppOrder = () => {
@@ -249,35 +287,74 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Actions */}
-          {price > 0 ? (
-            <>
-              <div className="flex flex-col sm:flex-row gap-3 mb-3">
-                <button onClick={handleAddToCart} className="flex-1 py-3.5 border border-gold-400/50 dark:border-gold-500/40 text-walnut-900 dark:text-cream font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-gold-500/10 transition-colors rounded-xl">
-                  <ShoppingBag size={16} /> Add to Cart
+          <div ref={actionsRef}>
+            {price > 0 ? (
+              <>
+                <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={isAdded}
+                    className={`flex-1 py-3.5 border font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 rounded-xl active:scale-[0.98] cursor-pointer ${
+                      isAdded
+                        ? 'border-emerald-600 bg-emerald-600 text-ivory shadow-md'
+                        : 'border-gold-400/60 dark:border-gold-500/50 text-walnut-900 dark:text-cream hover:bg-gold-500/10'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check size={16} className="animate-scale-in" />
+                        <span>Added to Cart</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag size={16} />
+                        <span>Add to Cart</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleBuyNow}
+                    disabled={isProcessingBuyNow}
+                    className="flex-1 py-3.5 bg-gold-600 hover:bg-gold-500 disabled:bg-gold-700 text-ivory font-semibold text-xs uppercase tracking-wider transition-all duration-300 rounded-xl shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isProcessingBuyNow ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-ivory border-t-transparent rounded-full animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <span>Buy Now</span>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleWhatsAppOrder}
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 rounded-xl mb-6 shadow-md shadow-emerald-950/30 active:scale-[0.98] cursor-pointer"
+                >
+                  <MessageCircle size={16} fill="white" /> Order via WhatsApp
                 </button>
-                <button onClick={handleBuyNow} className="flex-1 py-3.5 bg-gold-600 hover:bg-gold-500 text-ivory font-semibold text-xs uppercase tracking-wider transition-colors rounded-xl shadow-md">
-                  Buy Now
-                </button>
-              </div>
-              <button onClick={handleWhatsAppOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors rounded-xl mb-6 shadow-md">
-                <MessageCircle size={16} fill="white" /> Order via WhatsApp
+              </>
+            ) : (
+              <button
+                onClick={handleWhatsAppOrder}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 rounded-xl mb-6 shadow-md shadow-emerald-600/20 active:scale-[0.98] cursor-pointer"
+              >
+                <MessageCircle size={18} fill="white" /> Inquire Price & Custom Size on WhatsApp
               </button>
-            </>
-          ) : (
-            <button onClick={handleWhatsAppOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors rounded-xl mb-6 shadow-md shadow-emerald-600/20">
-              <MessageCircle size={18} fill="white" /> Inquire Price & Custom Size on WhatsApp
-            </button>
-          )}
+            )}
+          </div>
 
           {/* Secondary Actions */}
           <div className="flex gap-3 mb-8">
-            <button onClick={() => toggleWishlist(product)} className={`flex-1 py-3 border text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card ${inWishlist ? 'border-champagne-500 text-champagne-600 bg-champagne-50 dark:bg-champagne-900/20' : 'border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-champagne-400'}`}>
+            <button onClick={() => toggleWishlist(product)} className={`flex-1 py-3 border text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card cursor-pointer ${inWishlist ? 'border-gold-500 text-gold-500 bg-gold-950/20' : 'border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-gold-400'}`}>
               <Heart size={15} fill={inWishlist ? 'currentColor' : 'none'} /> {inWishlist ? 'Saved' : 'Wishlist'}
             </button>
-            <button onClick={() => toggleCompare(product)} className={`flex-1 py-3 border text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card ${inCompare ? 'border-champagne-500 text-champagne-600 bg-champagne-50 dark:bg-champagne-900/20' : 'border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-champagne-400'}`}>
+            <button onClick={() => toggleCompare(product)} className={`flex-1 py-3 border text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card cursor-pointer ${inCompare ? 'border-gold-500 text-gold-500 bg-gold-950/20' : 'border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-gold-400'}`}>
               <BarChart3 size={15} /> Compare
             </button>
-            <button onClick={() => navigator.share?.({ title: product.name, url: window.location.href }).catch(() => {})} className="flex-1 py-3 border border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-champagne-400 text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card">
+            <button onClick={() => navigator.share?.({ title: product.name, url: window.location.href }).catch(() => {})} className="flex-1 py-3 border border-champagne-200/40 dark:border-champagne-900/30 text-walnut-600 dark:text-cream/70 hover:border-gold-400 text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-all duration-300 rounded-card cursor-pointer">
               <Share2 size={15} /> Share
             </button>
           </div>
@@ -286,7 +363,7 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-3 gap-4 py-6 border-t border-champagne-200/30 dark:border-champagne-900/20">
             {[{ icon: Truck, label: 'Free Shipping', sub: 'Above ₹999' }, { icon: Shield, label: 'Secure', sub: 'Payment' }, { icon: RefreshCw, label: 'Easy', sub: 'Returns' }].map((item, i) => (
               <div key={i} className="flex flex-col items-center text-center">
-                <item.icon size={20} className="text-champagne-600 mb-2" />
+                <item.icon size={20} className="text-gold-500 mb-2" />
                 <p className="text-xs font-medium text-walnut-900 dark:text-cream">{item.label}</p>
                 <p className="text-xs text-walnut-400 font-light">{item.sub}</p>
               </div>
@@ -295,12 +372,53 @@ export default function ProductDetailPage() {
 
           <div className="mt-6 p-4 bg-cream/50 dark:bg-walnut-800/30 rounded-card">
             <p className="text-sm text-walnut-600 dark:text-beige-300 font-light">
-              <Truck size={16} className="inline mr-2 text-champagne-600" />
+              <Truck size={16} className="inline mr-2 text-gold-500" />
               Estimated delivery: <span className="font-medium text-walnut-900 dark:text-cream">{product.production_days + 4}–{product.production_days + 7} days</span>
             </p>
           </div>
         </div>
       </div>
+
+      {/* Sticky Mobile Purchase Bar */}
+      {showStickyBar && (
+        <div className="sm:hidden fixed bottom-14 left-0 right-0 z-40 bg-[#1A120C]/95 backdrop-blur-lg border-t border-gold-500/30 p-3 shadow-2xl animate-slide-up">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-[#0d0b0a] border border-gold-500/20 overflow-hidden shrink-0">
+                <img src={images[activeImage] ?? getProductImageUrl(product)} alt="" className="w-full h-full object-contain p-1" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-cream truncate">{product.name}</p>
+                <p className="text-xs font-semibold text-gold-400">{formatPrice(price)}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {price > 0 ? (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAdded}
+                  className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
+                    isAdded
+                      ? 'bg-emerald-600 text-ivory'
+                      : 'bg-gold-600 hover:bg-gold-500 text-ivory'
+                  }`}
+                >
+                  {isAdded ? <Check size={14} /> : <ShoppingBag size={14} />}
+                  <span>{isAdded ? 'Added' : 'Add to Cart'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleWhatsAppOrder}
+                  className="px-3 py-2 bg-emerald-600 text-ivory text-xs font-semibold uppercase tracking-wider rounded-lg flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <MessageCircle size={14} />
+                  <span>Inquire</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="mt-20">

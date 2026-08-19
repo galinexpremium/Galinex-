@@ -3,14 +3,14 @@ import { useStore } from '@/store/StoreContext';
 import { useAuth } from '@/store/AuthContext';
 
 export default function MobileNav() {
-  const { navigate, currentPage, cartCount, wishlistCount, setSearchOpen } = useStore();
+  const { navigate, currentPage, cartCount, wishlistCount, setSearchOpen, cartPulse } = useStore();
   const { user } = useAuth();
 
   const items = [
     { icon: Home, label: 'Home', page: 'home' as const },
     { icon: Search, label: 'Search', action: () => setSearchOpen(true) },
     { icon: Heart, label: 'Wishlist', page: 'wishlist' as const, badge: wishlistCount },
-    { icon: ShoppingBag, label: 'Cart', page: 'cart' as const, badge: cartCount },
+    { icon: ShoppingBag, label: 'Cart', page: 'cart' as const, badge: cartCount, isCart: true },
     { icon: User, label: 'Account', page: user ? 'account' as const : 'login' as const },
   ];
 
@@ -19,6 +19,7 @@ export default function MobileNav() {
       <div className="flex items-center justify-around px-2 py-2 safe-area">
         {items.map((item, i) => {
           const isActive = currentPage === item.page;
+          const shouldBounce = item.isCart && cartPulse;
           return (
             <button
               key={i}
@@ -27,12 +28,12 @@ export default function MobileNav() {
                 isActive
                   ? 'text-gold-600'
                   : 'text-walnut-500 dark:text-cream/60'
-              }`}
+              } ${shouldBounce ? 'animate-cart-bounce text-gold-500' : ''}`}
             >
               <div className={`relative transition-transform duration-500 ${isActive ? 'scale-110' : ''}`}>
                 <item.icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
                 {item.badge ? (
-                  <span className="absolute -top-1.5 -right-2 bg-gold-600 text-ivory text-[9px] font-bold rounded-full w-4.5 h-4.5 min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  <span className={`absolute -top-1.5 -right-2 bg-gold-600 text-ivory text-[9px] font-bold rounded-full w-4.5 h-4.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 transition-transform ${shouldBounce ? 'scale-125 bg-gold-500' : 'scale-100'}`}>
                     {item.badge}
                   </span>
                 ) : null}
