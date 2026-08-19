@@ -124,16 +124,85 @@
     overflow: hidden;
   }
 
-  /* Scroll reveal */
+  /* Luxury Scroll Reveal */
   .reveal {
     opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 1s ease-out, transform 1s ease-out;
+    transform: translateY(24px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+
+  @media (max-width: 640px) {
+    .reveal {
+      transform: translateY(14px);
+    }
   }
 
   .reveal.is-visible {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  /* Expanding gold accent line */
+  .gold-divider-animated {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #B08D57, transparent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .is-visible .gold-divider-animated,
+  .gold-divider-animated.is-expanded {
+    transform: scaleX(1);
+  }
+
+  /* Hero cinematic entrance */
+  @keyframes heroImageSettle {
+    from {
+      opacity: 0;
+      transform: scale(1.025);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1.0);
+    }
+  }
+
+  .hero-bg-settle {
+    animation: heroImageSettle 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Staggered hero text entrance */
+  @keyframes heroTextReveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hero-fade-1 {
+    animation: heroTextReveal 0.65s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-fade-2 {
+    animation: heroTextReveal 0.7s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-fade-3 {
+    animation: heroTextReveal 0.75s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-fade-4 {
+    animation: heroTextReveal 0.8s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-fade-5 {
+    animation: heroTextReveal 0.85s 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* Button shimmer */

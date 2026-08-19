@@ -26,6 +26,7 @@ import PdfCatalogueModal from '@/components/PdfCatalogueModal';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Toast from '@/components/Toast';
 import FirstLoadSplashScreen from '@/components/FirstLoadSplashScreen';
+import ScrollProgress from '@/components/ScrollProgress';
 
 function LuxuryLoader() {
   return (
@@ -153,6 +154,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-ivory dark:bg-walnut-950 flex flex-col">
       <FirstLoadSplashScreen />
+      <ScrollProgress />
       <Navbar />
       <main className="flex-1 pb-16 lg:pb-0">
         <PageRouter />

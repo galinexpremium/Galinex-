@@ -62,44 +62,75 @@ export default function HomePage() {
     { icon: Smile, title: 'Customer Satisfaction', desc: '100% satisfaction guarantee. We treat your memories with the care they deserve.' },
   ];
 
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-ivory dark:bg-walnut-950">
       {/* ============ HERO ============ */}
       <section className="relative h-[92vh] min-h-[640px] overflow-hidden">
-        <div className="absolute inset-0">
+        {/* Parallax Background */}
+        <div
+          className="absolute inset-0 will-change-transform"
+          style={{
+            transform: `translate3d(0, ${Math.min(scrollY * 0.22, 120)}px, 0)`,
+          }}
+        >
           <img
             src="https://images.pexels.com/photos/1050283/pexels-photo-1050283.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080"
             alt="Luxury personalized gifts on a warm wooden table"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover hero-bg-settle"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-walnut-950/70 via-walnut-950/40 to-walnut-950/80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-walnut-950/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-walnut-950/75 via-walnut-950/45 to-walnut-950/85" />
+          <div className="absolute inset-0 bg-gradient-to-r from-walnut-950/60 to-transparent" />
         </div>
 
-        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+        {/* Foreground Content with Staggered Entrance and Scroll Fade */}
+        <div
+          className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center will-change-transform"
+          style={{
+            transform: `translate3d(0, -${Math.min(scrollY * 0.12, 60)}px, 0)`,
+            opacity: Math.max(0, 1 - scrollY / 650),
+          }}
+        >
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2.5 px-5 py-2 glass rounded-btn text-cream text-xs font-light tracking-luxury uppercase mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2.5 px-5 py-2 glass rounded-btn text-cream text-xs font-light tracking-luxury uppercase mb-8 hero-fade-1">
               <Sparkles size={13} className="text-gold-400" />
               Premium Personalized Gifts
             </div>
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl text-cream leading-[1.05] mb-6 animate-fade-in-up font-light">
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl text-cream leading-[1.05] mb-6 hero-fade-2 font-light">
               Memories,
               <br />
               <span className="text-gold-gradient italic">Crafted Forever</span>
             </h1>
-            <p className="text-lg text-cream/80 mb-10 max-w-lg leading-relaxed font-light animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <p className="text-lg text-cream/80 mb-10 max-w-lg leading-relaxed font-light hero-fade-3">
               Premium personalized gifts that tell your story. Laser-engraved crystal, wood, and acrylic masterpieces crafted with precision.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 hero-fade-4">
               <button
                 onClick={() => navigate('shop')}
-                className="px-10 py-4 bg-gold-600 hover:bg-gold-500 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all duration-500 hover:shadow-[0_15px_40px_-10px_rgba(176,141,87,0.5)] rounded-btn btn-shimmer"
+                className="group px-10 py-4 bg-gold-600 hover:bg-gold-500 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all duration-300 hover:shadow-[0_15px_40px_-10px_rgba(176,141,87,0.5)] rounded-btn btn-shimmer cursor-pointer active:scale-98"
               >
-                Explore Collection <ArrowRight size={17} />
+                <span>Explore Collection</span>
+                <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1.5" />
               </button>
               <button
                 onClick={() => navigate('about')}
-                className="px-10 py-4 border border-cream/30 text-cream font-medium text-sm tracking-wide hover:bg-cream/10 transition-all duration-500 rounded-btn"
+                className="px-10 py-4 border border-cream/30 text-cream font-medium text-sm tracking-wide hover:bg-cream/10 transition-all duration-300 rounded-btn cursor-pointer active:scale-98"
               >
                 Our Story
               </button>
@@ -108,7 +139,7 @@ export default function HomePage() {
         </div>
 
         {/* Trust badges */}
-        <div className="absolute bottom-0 left-0 right-0">
+        <div className="absolute bottom-0 left-0 right-0 hero-fade-5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
@@ -135,7 +166,7 @@ export default function HomePage() {
         <Reveal className="text-center mb-16">
           <p className="text-gold-600 text-xs font-medium uppercase tracking-wider2 mb-3">Explore</p>
           <h2 className="font-display text-4xl sm:text-5xl text-walnut-900 dark:text-cream font-light">Gift Collections</h2>
-          <div className="gold-divider w-24 mx-auto mt-6" />
+          <div className="gold-divider-animated w-24 mx-auto mt-6" />
         </Reveal>
 
         <Reveal>
@@ -252,7 +283,7 @@ export default function HomePage() {
           <Reveal className="text-center mb-16">
             <p className="text-gold-600 text-xs font-medium uppercase tracking-wider2 mb-3">How It Works</p>
             <h2 className="font-display text-4xl sm:text-5xl text-walnut-900 dark:text-cream font-light">Our Process</h2>
-            <div className="gold-divider w-24 mx-auto mt-6" />
+            <div className="gold-divider-animated w-24 mx-auto mt-6" />
           </Reveal>
 
           {/* Desktop timeline */}
@@ -333,7 +364,7 @@ export default function HomePage() {
           <Reveal className="text-center mb-16">
             <p className="text-gold-600 text-xs font-medium uppercase tracking-wider2 mb-3">Find The Perfect Gift</p>
             <h2 className="font-display text-4xl sm:text-5xl text-walnut-900 dark:text-cream font-light">Gift Occasions</h2>
-            <div className="gold-divider w-24 mx-auto mt-6" />
+            <div className="gold-divider-animated w-24 mx-auto mt-6" />
           </Reveal>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
             {occasions.map((occ, i) => (
@@ -434,7 +465,7 @@ export default function HomePage() {
         <Reveal className="text-center mb-16">
           <p className="text-gold-600 text-xs font-medium uppercase tracking-wider2 mb-3">Why GALINEX</p>
           <h2 className="font-display text-4xl sm:text-5xl text-walnut-900 dark:text-cream font-light">The GALINEX Difference</h2>
-          <div className="gold-divider w-24 mx-auto mt-6" />
+          <div className="gold-divider-animated w-24 mx-auto mt-6" />
         </Reveal>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {whyGalinex.map((item, i) => (
