@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Check, Trash2,
   Type, Sparkles, Wand2, ShieldCheck, Sun, Contrast,
-  Layers, RefreshCw, Eye
+  Layers, Move
 } from 'lucide-react';
 import type { CustomizationData, Product } from '@/types';
 
@@ -23,11 +23,11 @@ export const DEFAULT_CUSTOMIZATION: CustomizationData = {
   text_color: '#FFFFFF',
   filter: 'laser_bw',
   brightness: 105,
-  contrast: 130,
+  contrast: 135,
   rotation: 0,
   approved: false,
-  text_position: { x: 50, y: 82 },
-  photo_transform: { x: 50, y: 46, scale: 1.0, rotation: 0 },
+  text_position: { x: 50, y: 78 },
+  photo_transform: { x: 50, y: 45, scale: 1.0, rotation: 0 },
   crop: null,
 };
 
@@ -50,31 +50,35 @@ export default function ProductCustomizer({
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const slug = product?.slug || '';
   const categorySlug = product?.category?.slug || '';
+  
   const isCrystal = categorySlug.includes('crystal') || categorySlug.includes('3d');
   const isWood = categorySlug.includes('wood');
   const isAcrylic = categorySlug.includes('acrylic');
   const isMoonLamp = categorySlug.includes('moon');
+  const isHeartShape = slug.includes('heart');
+  const isOvalShape = slug.includes('oval');
+  const isRoundShape = slug.includes('round') || slug.includes('clock') || isMoonLamp;
 
-  // Filter list customized based on the active product's physical material
+  // Material-specific available filters
   const availableFilters = [
     ...(isCrystal ? [{ id: 'laser_bw', name: '3D Laser Point Cloud', desc: 'Sub-surface crystal laser dot etching', icon: '✨' }] : []),
-    ...(isWood ? [{ id: 'wood_etch', name: 'Laser Scorched Wood', desc: 'Charred sepia burn into natural wood grain', icon: '🪵' }] : []),
+    ...(isWood ? [{ id: 'wood_etch', name: 'Laser Scorched Wood', desc: 'Laser burned into natural wood grain', icon: '🪵' }] : []),
     ...(isAcrylic ? [{ id: 'acrylic_glow', name: 'Acrylic Edge Illumination', desc: 'Glowing laser contour with LED base lighting', icon: '💡' }] : []),
     ...(isMoonLamp ? [{ id: 'lithophane', name: 'Lunar Lithophane Glow', desc: 'Spherical textured diffusion with internal glow', icon: '🌕' }] : []),
     { id: 'hd_boost', name: 'HD Portrait Clarity', desc: 'Sharpened contrast & edge definition', icon: '🔍' },
     { id: 'original', name: 'Original Natural Photo', desc: 'Full spectrum original colors', icon: '📸' },
   ];
 
-  // Set appropriate default filter when product material changes
+  // Set default material filter and colors
   useEffect(() => {
     const defaultFilter = isWood ? 'wood_etch' : isAcrylic ? 'acrylic_glow' : isMoonLamp ? 'lithophane' : 'laser_bw';
     setData(prev => ({
       ...prev,
       filter: prev.filter || defaultFilter,
-      text_color: isWood ? '#3a2012' : '#FFFFFF'
+      text_color: isWood ? '#2b180d' : '#FFFFFF'
     }));
   }, [categorySlug, isWood, isAcrylic, isMoonLamp]);
 
@@ -108,7 +112,7 @@ export default function ProductCustomizer({
   };
 
   const handleSamplePhoto = () => {
-    // Ultra high quality reference portrait for instant photorealistic testing
+    // Ultra high resolution couple portrait reference
     const sample = 'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg?auto=compress&cs=tinysrgb&w=800';
     update({
       photo_url: sample,
@@ -124,29 +128,29 @@ export default function ProductCustomizer({
     setIsProcessing(true);
     setTimeout(() => {
       let b = 105;
-      let c = 130;
+      let c = 135;
       let textColor = '#FFFFFF';
 
       if (filterId === 'laser_bw') {
-        b = 110;
-        c = 140;
+        b = 115;
+        c = 150;
         textColor = '#FFFFFF';
       } else if (filterId === 'wood_etch') {
-        b = 85;
-        c = 150;
-        textColor = '#3a2012';
+        b = 90;
+        c = 160;
+        textColor = '#2b180d';
       } else if (filterId === 'acrylic_glow') {
-        b = 115;
-        c = 135;
+        b = 120;
+        c = 140;
         textColor = '#ffe6a3';
       } else if (filterId === 'lithophane') {
-        b = 120;
-        c = 135;
+        b = 115;
+        c = 140;
         textColor = '#ffe8c2';
       } else if (filterId === 'hd_boost') {
         b = 105;
-        c = 125;
-        textColor = isWood ? '#3a2012' : '#FFFFFF';
+        c = 130;
+        textColor = isWood ? '#2b180d' : '#FFFFFF';
       }
 
       update({
@@ -156,42 +160,79 @@ export default function ProductCustomizer({
         text_color: textColor,
       });
       setIsProcessing(false);
-    }, 200);
+    }, 150);
   };
 
-  // Compute CSS filter styling for live responsive overlay
+  // Compute CSS filter styling for live laser simulation
   const getPhotoFilterStyle = () => {
     const b = data.brightness ?? 105;
-    const c = data.contrast ?? 130;
+    const c = data.contrast ?? 135;
     let filterString = `brightness(${b}%) contrast(${c}%)`;
 
     if (data.filter === 'laser_bw') {
-      filterString += ' grayscale(100%) drop-shadow(0 0 12px rgba(255,255,255,0.6))';
+      filterString += ' grayscale(100%) drop-shadow(0 0 10px rgba(255,255,255,0.7))';
     } else if (data.filter === 'wood_etch') {
-      filterString += ' sepia(90%) grayscale(35%) contrast(155%)';
+      filterString += ' sepia(90%) grayscale(30%) contrast(165%) brightness(88%)';
     } else if (data.filter === 'acrylic_glow') {
-      filterString += ' grayscale(90%) brightness(125%) drop-shadow(0 0 10px rgba(255,230,163,0.7))';
+      filterString += ' grayscale(80%) brightness(125%) drop-shadow(0 0 12px rgba(255,225,150,0.65))';
     } else if (data.filter === 'lithophane') {
-      filterString += ' sepia(40%) grayscale(45%) brightness(120%)';
+      filterString += ' sepia(35%) grayscale(45%) contrast(140%) brightness(115%)';
     }
     return filterString;
   };
 
-  // Determine stage chassis template or fallback to product image
-  const stageTemplate = isCrystal
-    ? '/templates/crystal_chassis.webp'
-    : isWood
-    ? '/templates/wood_chassis.webp'
-    : isAcrylic
-    ? '/templates/acrylic_chassis.webp'
-    : isMoonLamp
-    ? '/templates/moon_chassis.webp'
-    : productImage;
+  // Compute product-specific soft feathered mask (NO square or rectangular photo border)
+  const getEngravingMaskStyle = () => {
+    if (isHeartShape) {
+      return {
+        maskImage: 'radial-gradient(ellipse 52% 52% at 50% 46%, black 35%, rgba(0,0,0,0.85) 55%, transparent 85%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 52% 52% at 50% 46%, black 35%, rgba(0,0,0,0.85) 55%, transparent 85%)',
+      };
+    }
+    if (isOvalShape) {
+      return {
+        maskImage: 'radial-gradient(ellipse 50% 60% at 50% 50%, black 40%, rgba(0,0,0,0.8) 60%, transparent 88%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 50% 60% at 50% 50%, black 40%, rgba(0,0,0,0.8) 60%, transparent 88%)',
+      };
+    }
+    if (isRoundShape) {
+      return {
+        maskImage: 'radial-gradient(circle at 50% 50%, black 45%, rgba(0,0,0,0.75) 65%, transparent 90%)',
+        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 45%, rgba(0,0,0,0.75) 65%, transparent 90%)',
+      };
+    }
+    // Crystal tower or standard plaque
+    return {
+      maskImage: 'radial-gradient(ellipse 48% 54% at 50% 46%, black 42%, rgba(0,0,0,0.8) 62%, transparent 88%)',
+      WebkitMaskImage: 'radial-gradient(ellipse 48% 54% at 50% 46%, black 42%, rgba(0,0,0,0.8) 62%, transparent 88%)',
+    };
+  };
+
+  // Engraving geometry placement on the physical product
+  const getEngravingZone = () => {
+    if (isHeartShape) {
+      return { top: '24%', left: '20%', width: '60%', height: '52%' };
+    }
+    if (isOvalShape) {
+      return { top: '22%', left: '22%', width: '56%', height: '54%' };
+    }
+    if (isMoonLamp) {
+      return { top: '18%', left: '22%', width: '56%', height: '56%' };
+    }
+    if (isCrystal) {
+      return { top: '20%', left: '20%', width: '60%', height: '54%' };
+    }
+    // Standard wood plaque / frame
+    return { top: '22%', left: '20%', width: '60%', height: '52%' };
+  };
 
   const handleApprove = () => {
     update({ approved: true, approved_at: new Date().toISOString() });
     if (onApprove) onApprove({ ...data, approved: true });
   };
+
+  const engravingZone = getEngravingZone();
+  const maskStyle = getEngravingMaskStyle();
 
   return (
     <div className="space-y-6">
@@ -227,35 +268,42 @@ export default function ProductCustomizer({
           {/* Studio Stage Spotlight */}
           <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-60" />
 
-          {/* Physical Product Simulation Canvas / Viewport */}
+          {/* Physical Product Simulation Viewport */}
           <div className="relative w-full aspect-[4/5] max-w-[340px] rounded-xl overflow-hidden shadow-2xl flex items-center justify-center bg-[#0e0c0a] border border-gold-400/20">
-            {/* Background Chassis / Product Object */}
+            {/* Base Physical Product Photography (Authentic wood grain, crystal bevels, floral motifs) */}
             <img
-              src={data.photo_url ? stageTemplate : productImage}
+              src={productImage}
               alt={productName}
-              className="w-full h-full object-contain pointer-events-none select-none z-10 opacity-90 transition-opacity duration-500"
+              className="w-full h-full object-contain pointer-events-none select-none z-10 opacity-95 transition-opacity duration-500"
             />
 
-            {/* Customer's Uploaded Photo Transformed Into Engraving */}
+            {/* Customer's Uploaded Photo Transformed and Masked Directly Into the Physical Engraving Region */}
             {data.photo_url ? (
               <div
                 className="absolute z-20 pointer-events-none transition-all duration-300 flex items-center justify-center overflow-hidden"
                 style={{
-                  top: `${data.photo_transform.y - 24}%`,
-                  left: `${data.photo_transform.x - 24}%`,
-                  width: '48%',
-                  height: '48%',
-                  transform: `scale(${data.photo_transform.scale}) rotate(${data.rotation ?? 0}deg)`,
+                  top: engravingZone.top,
+                  left: engravingZone.left,
+                  width: engravingZone.width,
+                  height: engravingZone.height,
+                  ...maskStyle,
                   mixBlendMode: isWood ? 'multiply' : 'screen',
-                  opacity: isWood ? 0.90 : 0.95,
+                  opacity: isWood ? 0.92 : 0.96,
                 }}
               >
-                <img
-                  src={data.photo_url}
-                  alt="Customer Upload"
-                  style={{ filter: getPhotoFilterStyle() }}
-                  className="w-full h-full object-contain"
-                />
+                <div
+                  className="w-full h-full flex items-center justify-center transition-transform duration-300"
+                  style={{
+                    transform: `scale(${data.photo_transform.scale}) rotate(${data.rotation ?? 0}deg)`,
+                  }}
+                >
+                  <img
+                    src={data.photo_url}
+                    alt="Engraved Portrait"
+                    style={{ filter: getPhotoFilterStyle() }}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               </div>
             ) : (
               /* Helpful upload guide when empty */
@@ -263,43 +311,42 @@ export default function ProductCustomizer({
                 <div className="w-12 h-12 rounded-full bg-gold-600/20 border border-gold-400/40 flex items-center justify-center text-gold-400 mb-2 animate-pulse">
                   <Upload size={20} />
                 </div>
-                <p className="text-xs font-medium text-cream mb-1">Upload Your Photo</p>
+                <p className="text-xs font-medium text-cream mb-1">Upload Your Portrait</p>
                 <p className="text-[10px] text-beige-400 max-w-[200px]">
-                  See your portrait transformed into a live 3D laser engraving inside this {isCrystal ? 'Crystal' : isWood ? 'Wood Plaque' : 'Gift'}.
+                  Watch your face seamlessly laser-engraved into this {isWood ? 'wooden grain plaque' : isCrystal ? '3D optical crystal' : 'gift'}.
                 </p>
               </div>
             )}
 
-            {/* Customer Custom Text Engraved Overlay */}
+            {/* Customer Custom Text Physically Engraved Overlay */}
             {data.text && (
               <div
                 className="absolute z-30 pointer-events-none text-center px-4 transition-all duration-300 w-full"
                 style={{
-                  top: `${data.text_position.y}%`,
+                  top: isHeartShape ? '76%' : isWood ? '78%' : `${data.text_position.y}%`,
                   left: '50%',
                   transform: 'translateX(-50%)',
                   fontFamily: data.font,
-                  color: isWood ? '#3a2012' : '#FFFFFF',
+                  color: isWood ? '#2b180d' : isAcrylic ? '#fff6df' : '#FFFFFF',
                   textShadow: isWood
-                    ? '0 1px 1px rgba(255,255,255,0.5)'
+                    ? '0 1px 1px rgba(255,255,255,0.4), inset 0 1px 2px rgba(0,0,0,0.6)'
+                    : isAcrylic
+                    ? '0 0 8px rgba(255,220,130,0.9), 0 0 16px rgba(255,200,80,0.5)'
                     : '0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(196,163,90,0.6)',
                 }}
               >
-                <p className="text-xs sm:text-sm font-semibold tracking-widest uppercase truncate max-w-[280px] mx-auto">
+                <p className="text-xs sm:text-sm font-semibold tracking-widest uppercase truncate max-w-[260px] mx-auto">
                   {data.text}
                 </p>
               </div>
             )}
 
-            {/* Sub-Surface Optical Refraction Shimmer */}
+            {/* Physical Material Refraction Highlights */}
             {isCrystal && (
               <div className="absolute inset-0 z-15 pointer-events-none bg-gradient-to-tr from-cyan-400/10 via-transparent to-gold-400/15 mix-blend-overlay" />
             )}
             {isAcrylic && (
               <div className="absolute bottom-0 inset-x-0 h-16 z-15 pointer-events-none bg-gradient-to-t from-amber-400/30 to-transparent blur-sm" />
-            )}
-            {isMoonLamp && (
-              <div className="absolute inset-0 z-15 pointer-events-none rounded-full bg-radial from-amber-200/20 via-yellow-100/10 to-transparent blur-md" />
             )}
           </div>
 
@@ -308,12 +355,12 @@ export default function ProductCustomizer({
             <Sparkles size={12} className="text-gold-400" />
             <span>
               {isCrystal
-                ? 'Optical Sub-Surface 3D Laser Simulation'
+                ? 'Sub-Surface 3D Laser Point Cloud Engraving'
                 : isWood
-                ? 'Laser Scorched Natural Wood Grain Simulation'
+                ? 'Laser Scorched Natural Wood Grain Engraving'
                 : isAcrylic
-                ? 'LED Edge-Lit Acrylic Simulation'
-                : 'Spherical Lithophane Light Simulation'}
+                ? 'Illuminated Acrylic Edge Engraving'
+                : 'Spherical Lithophane Engraving'}
             </span>
           </div>
         </div>
@@ -458,8 +505,8 @@ export default function ProductCustomizer({
                 <input
                   type="range"
                   min="80"
-                  max="170"
-                  value={data.contrast ?? 130}
+                  max="180"
+                  value={data.contrast ?? 135}
                   onChange={e => update({ contrast: Number(e.target.value) })}
                   className="w-full accent-gold-600 cursor-pointer"
                 />
@@ -477,7 +524,7 @@ export default function ProductCustomizer({
                     onClick={() => update({
                       photo_transform: {
                         ...data.photo_transform,
-                        scale: Math.min(1.4, Number(((data.photo_transform.scale || 1.0) + 0.1).toFixed(1)))
+                        scale: Math.min(1.5, Number(((data.photo_transform.scale || 1.0) + 0.1).toFixed(1)))
                       }
                     })}
                     className="p-1.5 border border-gold-200/40 rounded-lg hover:bg-gold-500/10 text-walnut-700 dark:text-beige-300"
@@ -595,9 +642,9 @@ export default function ProductCustomizer({
 
               <div className="p-3.5 bg-cream/40 dark:bg-walnut-900/50 rounded-xl border border-gold-200/30 space-y-1.5 text-xs text-walnut-700 dark:text-beige-300">
                 <p><span className="font-semibold text-walnut-900 dark:text-cream">Product:</span> {productName}</p>
-                <p><span className="font-semibold text-walnut-900 dark:text-cream">Photo:</span> {data.photo_url ? 'Custom Upload Attached' : 'None'}</p>
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Photo:</span> {data.photo_url ? 'Custom Portrait Engraved' : 'None'}</p>
                 <p><span className="font-semibold text-walnut-900 dark:text-cream">Message:</span> {data.text || 'None'}</p>
-                <p><span className="font-semibold text-walnut-900 dark:text-cream">Style:</span> {data.filter?.toUpperCase()}</p>
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Engraving Style:</span> {data.filter?.toUpperCase()}</p>
               </div>
 
               <label className="flex items-start gap-2.5 cursor-pointer pt-1">
