@@ -14,7 +14,7 @@ const FONTS = [
   { value: "'Montserrat', sans-serif", label: 'Montserrat (Bold Clean)' },
 ];
 
-export const DEFAULT_CUSTOMIZATION: CustomizationData = {
+const DEFAULT_CUSTOMIZATION: CustomizationData = {
   photo_url: null,
   processed_photo_url: null,
   preview_thumbnail: null,
