@@ -135,9 +135,15 @@ export default function ProductDetailPage() {
           <p className="text-walnut-500 dark:text-beige-400 mb-8 font-light leading-relaxed">{product.short_description}</p>
 
           <div className="flex items-baseline gap-4 mb-8 pb-8 border-b border-champagne-200/30 dark:border-champagne-900/20">
-            <span className="font-display text-3xl text-walnut-900 dark:text-cream">{formatPrice(price)}</span>
-            {product.sale_price && <span className="text-lg text-walnut-400 line-through font-light">{formatPrice(product.base_price)}</span>}
-            {discount > 0 && <span className="px-3 py-1 bg-walnut-900 text-ivory text-[10px] font-medium tracking-wider">SAVE {discount}%</span>}
+            <span className={`font-display font-medium text-walnut-900 dark:text-cream ${price > 0 ? 'text-3xl' : 'text-xl text-champagne-600 dark:text-champagne-400 font-sans tracking-wide uppercase'}`}>
+              {formatPrice(price)}
+            </span>
+            {price > 0 && product.sale_price && product.sale_price < product.base_price && (
+              <span className="text-lg text-walnut-400 line-through font-light">{formatPrice(product.base_price)}</span>
+            )}
+            {price > 0 && discount > 0 && (
+              <span className="px-3 py-1 bg-walnut-900 text-ivory text-[10px] font-medium tracking-wider">SAVE {discount}%</span>
+            )}
           </div>
 
           {/* Customizer */}
@@ -162,19 +168,27 @@ export default function ProductDetailPage() {
               <span className="px-5 font-display text-lg text-walnut-900 dark:text-cream">{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)} className="p-3 text-walnut-500 hover:text-champagne-600 transition-colors"><Plus size={15} /></button>
             </div>
-            <span className="text-sm text-walnut-400 font-light">{product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}</span>
+            <span className="text-sm text-walnut-400 font-light">{product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Made to Order'}</span>
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <button onClick={handleAddToCart} className="flex-1 py-4 border border-walnut-800 dark:border-cream/30 text-walnut-800 dark:text-cream font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 hover:bg-walnut-900 dark:hover:bg-cream hover:text-ivory dark:hover:text-walnut-900 transition-all duration-500 rounded-card">
-              <ShoppingBag size={17} /> Add to Cart
+          {price > 0 ? (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <button onClick={handleAddToCart} className="flex-1 py-4 border border-walnut-800 dark:border-cream/30 text-walnut-800 dark:text-cream font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 hover:bg-walnut-900 dark:hover:bg-cream hover:text-ivory dark:hover:text-walnut-900 transition-all duration-500 rounded-card">
+                  <ShoppingBag size={17} /> Add to Cart
+                </button>
+                <button onClick={handleBuyNow} className="flex-1 py-4 bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium text-sm tracking-wide transition-colors duration-500 rounded-card">Buy Now</button>
+              </div>
+              <button onClick={handleWhatsAppOrder} className="w-full py-4 bg-green-600 hover:bg-green-700 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors duration-500 rounded-card mb-6">
+                <MessageCircle size={18} fill="white" /> Order via WhatsApp
+              </button>
+            </>
+          ) : (
+            <button onClick={handleWhatsAppOrder} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors duration-500 rounded-card mb-6 shadow-md shadow-emerald-600/20">
+              <MessageCircle size={18} fill="white" /> Inquire Price & Custom Size on WhatsApp
             </button>
-            <button onClick={handleBuyNow} className="flex-1 py-4 bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium text-sm tracking-wide transition-colors duration-500 rounded-card">Buy Now</button>
-          </div>
-          <button onClick={handleWhatsAppOrder} className="w-full py-4 bg-green-600 hover:bg-green-700 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors duration-500 rounded-card mb-6">
-            <MessageCircle size={18} fill="white" /> Order via WhatsApp
-          </button>
+          )}
 
           {/* Secondary Actions */}
           <div className="flex gap-3 mb-8">

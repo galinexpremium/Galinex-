@@ -1,4 +1,7 @@
-export function formatPrice(price: number): string {
+export function formatPrice(price: number | null | undefined): string {
+  if (price === null || price === undefined || price <= 0) {
+    return 'Price on Request';
+  }
   return '₹' + price.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
@@ -10,8 +13,8 @@ export function formatDate(date: string): string {
   });
 }
 
-export function getEffectivePrice(product: { base_price: number; sale_price: number | null }): number {
-  return product.sale_price ?? product.base_price;
+export function getEffectivePrice(product: { base_price: number | null; sale_price: number | null }): number {
+  return (product.sale_price && product.sale_price > 0) ? product.sale_price : (product.base_price ?? 0);
 }
 
 export function getDiscountPercent(product: { base_price: number; sale_price: number | null }): number {

@@ -55,6 +55,7 @@ export default function ShopPage() {
     }
     result = result.filter(p => {
       const price = p.sale_price ?? p.base_price;
+      if (!price || price <= 0) return true;
       return price >= priceRange[0] && price <= priceRange[1];
     });
     if (selectedOccasions.length > 0) result = result.filter(p => p.occasions?.some(o => selectedOccasions.includes(o)));
