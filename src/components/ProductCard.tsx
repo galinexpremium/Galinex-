@@ -13,6 +13,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const inCompare = isInCompare(product.id);
   const price = getEffectivePrice(product);
   const isPriced = price > 0;
+  const isMdf = product.slug.includes('mdf') || product.category?.slug === 'mdf-decor' || !isPriced;
   const discount = isPriced ? getDiscountPercent(product) : 0;
   const imageUrl = getProductImageUrl(product);
 
@@ -29,8 +30,128 @@ export default function ProductCard({ product }: { product: Product }) {
       : buildProductInquiryMessage(product)
   );
 
+  // ----------------------------------------------------
+  // FEATURED MDF 2-COLUMN PRESENTATION
+  // ----------------------------------------------------
+  if (isMdf) {
+    return (
+      <div className="col-span-2 group relative bg-ivory dark:bg-walnut-900/95 rounded-2xl overflow-hidden transition-all duration-300 shadow-md hover:shadow-2xl hover:-translate-y-1 border border-gold-400/40 dark:border-gold-700/50 flex flex-col justify-between">
+        {/* Generous Featured Image Stage */}
+        <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-[#0d0b0a] overflow-hidden">
+          {!imgLoaded && (
+            <div className="absolute inset-0 skeleton-shimmer" />
+          )}
+
+          {/* Featured Badge */}
+          <div className="absolute top-3 left-3 z-10 px-3 py-1 text-[9px] sm:text-[10px] font-semibold text-ivory uppercase tracking-widest rounded-md shadow-md bg-gradient-to-r from-amber-600 to-amber-700 border border-amber-400/30">
+            Featured Collection
+          </div>
+
+          {/* Wishlist Heart */}
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+            className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-walnut-950/70 backdrop-blur-md flex items-center justify-center transition-all duration-300 cursor-pointer ${inWishlist ? 'text-gold-500 scale-110' : 'text-ivory/80 hover:text-gold-400 hover:scale-110'}`}
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart size={16} fill={inWishlist ? 'currentColor' : 'none'} />
+          </button>
+
+          {/* Quick Actions (Desktop) */}
+          <div className="absolute right-3 bottom-3 z-10 flex gap-2 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden sm:flex">
+            <button
+              onClick={() => navigate('product', { slug: product.slug })}
+              className="px-3 py-1.5 rounded-lg bg-walnut-950/80 backdrop-blur-md text-ivory/90 hover:text-gold-400 text-xs font-medium flex items-center gap-1.5 border border-gold-500/20 cursor-pointer"
+            >
+              <Eye size={14} /> Quick View
+            </button>
+          </div>
+
+          {/* Main MDF Photography */}
+          <button
+            onClick={() => navigate('product', { slug: product.slug })}
+            className="w-full h-full block cursor-pointer"
+          >
+            <img
+              src={imageUrl}
+              alt={product.name}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              className={`w-full h-full object-contain p-3 sm:p-5 transition-all duration-500 group-hover:scale-[1.02] ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onError={(e) => {
+                setImgLoaded(true);
+                (e.target as HTMLImageElement).src = '/products/3d-crystal-gifts/5x5x8-3d-crystal-single-image.webp';
+              }}
+            />
+          </button>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[10px] sm:text-xs font-semibold tracking-widest text-gold-500 uppercase">
+                MDF Custom Framing & Collage
+              </span>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Star key={i} size={11} className="text-gold-500 fill-gold-500" />
+                ))}
+                <span className="text-[10px] text-walnut-400 dark:text-beige-400 ml-1">(5.0)</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('product', { slug: product.slug })}
+              className="text-left w-full block group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors cursor-pointer"
+            >
+              <h3 className="font-display text-base sm:text-lg md:text-xl text-walnut-900 dark:text-cream leading-snug font-medium">
+                {product.name}
+              </h3>
+            </button>
+
+            <p className="text-xs sm:text-sm text-walnut-500 dark:text-beige-300 font-light mt-1 mb-3 line-clamp-2">
+              Custom multi-photo collage wall decor and laser-contoured frame keepsakes. Tailored to custom sizes, room dimensions, and design themes.
+            </p>
+          </div>
+
+          {/* Pricing & CTA Section */}
+          <div className="pt-3 border-t border-gold-200/30 dark:border-gold-900/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs text-walnut-400 font-light block">Custom Pricing</span>
+              <span className="font-display font-semibold text-sm sm:text-base text-gold-600 dark:text-gold-400 uppercase tracking-wide">
+                Price on Request
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('product', { slug: product.slug })}
+                className="flex-1 sm:flex-none px-4 py-2.5 border border-gold-400/40 hover:border-gold-500 text-walnut-800 dark:text-cream text-xs font-medium uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+              >
+                <Eye size={14} />
+                <span>View Designs</span>
+              </button>
+              <a
+                href={whatsappInquiryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+              >
+                <MessageCircle size={14} />
+                <span>Inquire on WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // STANDARD SINGLE CARD PRESENTATION
+  // ----------------------------------------------------
   return (
-    <div className="group relative bg-ivory dark:bg-walnut-900/90 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 border border-gold-200/40 dark:border-gold-900/30 hover:border-gold-400/60 dark:hover:border-gold-700/50 flex flex-col justify-between">
+    <div className="group relative bg-ivory dark:bg-walnut-900/90 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 border border-gold-200/40 dark:border-gold-900/30 hover:border-gold-400/60 dark:hover:border-gold-700/50 flex flex-col justify-between min-w-0">
       {/* Top Media Area */}
       <div className="relative w-full aspect-[4/5] bg-[#0d0b0a] overflow-hidden">
         {/* Skeleton while loading */}
@@ -99,7 +220,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
 
       {/* Product Information Card Body */}
-      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between">
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between min-w-0">
         <div>
           {/* Rating */}
           <div className="flex items-center gap-1 mb-1.5">
