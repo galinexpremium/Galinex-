@@ -244,6 +244,55 @@
   animation: skeletonShimmer 1.8s infinite;
 }
 
+@keyframes brandIntroExpand {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.brand-intro-line {
+  transform-origin: center;
+  animation: brandIntroExpand 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes brandIntroLogo {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.brand-intro-logo {
+  animation: brandIntroLogo 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes brandIntroSubtitle {
+  0% {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.brand-intro-subtitle {
+  animation: brandIntroSubtitle 0.55s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
