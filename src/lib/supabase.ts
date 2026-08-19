@@ -1,18 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL;
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-// Validate environment variables safely
-const isValidUrl = typeof rawUrl === 'string' && (rawUrl.startsWith('https://') || rawUrl.startsWith('http://'));
-const isValidKey = typeof rawKey === 'string' && rawKey.trim().length > 0;
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const isSupabaseConfigured = Boolean(isValidUrl && isValidKey);
-
-const supabaseUrl = isValidUrl ? rawUrl : 'https://placeholder.supabase.co';
-const supabaseAnonKey = isValidKey ? rawKey : 'placeholder-anon-key';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
