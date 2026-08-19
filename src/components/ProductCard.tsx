@@ -2,7 +2,7 @@ import { Heart, BarChart3, Eye, Star, ShoppingBag, Sparkles, MessageCircle } fro
 import type { Product } from '@/types';
 import { useStore } from '@/store/StoreContext';
 import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor, getProductImageUrl } from '@/lib/format';
-import { buildDirectWhatsAppUrl, buildMdfQuoteRequestMessage } from '@/lib/whatsapp';
+import { buildDirectWhatsAppUrl, buildMdfQuoteRequestMessage, buildProductInquiryMessage } from '@/lib/whatsapp';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { navigate, addToCart, toggleWishlist, isInWishlist, toggleCompare, isInCompare } = useStore();
@@ -16,7 +16,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const whatsappInquiryUrl = buildDirectWhatsAppUrl(
     !isPriced
       ? buildMdfQuoteRequestMessage(product)
-      : `Hi GALINEX, I would like to inquire about: ${product.name}`
+      : buildProductInquiryMessage(product)
   );
 
   return (
@@ -131,37 +131,37 @@ export default function ProductCard({ product }: { product: Product }) {
           <div className="space-y-1.5">
             {isPriced ? (
               <>
-                {product.is_customizable ? (
-                  <button
-                    onClick={() => navigate('product', { slug: product.slug })}
-                    className="w-full py-2 sm:py-2.5 bg-gold-600 hover:bg-gold-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <Sparkles size={13} /> Personalize Now
-                  </button>
-                ) : null}
                 <button
                   onClick={() => addToCart(product)}
-                  className={`w-full py-2 sm:py-2.5 ${product.is_customizable ? 'border border-walnut-700 dark:border-cream/30 text-walnut-800 dark:text-cream hover:bg-walnut-800 dark:hover:bg-cream hover:text-ivory dark:hover:text-walnut-900' : 'bg-gold-600 hover:bg-gold-500 text-ivory'} text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5`}
-                >
-                  <ShoppingBag size={13} /> {product.is_customizable ? 'Add to Cart' : 'Order Now'}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => navigate('product', { slug: product.slug })}
                   className="w-full py-2 sm:py-2.5 bg-gold-600 hover:bg-gold-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm"
                 >
-                  <Eye size={13} /> View Catalogue Options
+                  <ShoppingBag size={13} /> Add to Cart
                 </button>
                 <a
                   href={whatsappInquiryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2 sm:py-2.5 border border-emerald-600/60 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5"
+                  className="w-full py-1.5 sm:py-2 border border-emerald-600/50 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-ivory text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle size={13} /> WhatsApp Inquiry
+                </a>
+              </>
+            ) : (
+              <>
+                <a
+                  href={whatsappInquiryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-ivory text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <MessageCircle size={13} /> Inquire on WhatsApp
                 </a>
+                <button
+                  onClick={() => navigate('product', { slug: product.slug })}
+                  className="w-full py-1.5 sm:py-2 border border-gold-400/40 hover:border-gold-500 text-walnut-800 dark:text-cream text-[10px] sm:text-[11px] font-medium uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5"
+                >
+                  <Eye size={13} /> View Catalogue Options
+                </button>
               </>
             )}
           </div>

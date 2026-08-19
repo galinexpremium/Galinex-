@@ -222,8 +222,8 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Customizer */}
-          {(product.is_customizable || product.requires_photo) && (
+          {/* Personalization studio temporarily disabled in shopping flow (preserved for future phase) */}
+          {/* {(product.is_customizable || product.requires_photo) && (
             <div className="mb-8 p-6 bg-cream/50 dark:bg-walnut-800/30 border border-champagne-200/30 dark:border-champagne-900/20 rounded-card">
               <h4 className="font-display text-lg text-walnut-900 dark:text-cream mb-4 flex items-center gap-2">
                 <Plus size={16} className="text-champagne-600" /> Personalize Your Gift
@@ -235,7 +235,7 @@ export default function ProductDetailPage() {
                 onChange={setCustomizationData}
               />
             </div>
-          )}
+          )} */}
 
           {/* Quantity */}
           <div className="flex items-center gap-5 mb-8">
