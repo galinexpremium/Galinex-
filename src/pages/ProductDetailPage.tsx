@@ -165,7 +165,7 @@ export default function ProductDetailPage() {
             {discount > 0 && <div className="absolute top-4 right-4 z-10 px-2.5 py-1 bg-walnut-950/90 text-gold-300 text-[9px] font-semibold tracking-wider rounded-md border border-gold-500/30">-{discount}%</div>}
             
             {/* Base Product Photography */}
-            <img src={images[activeImage] ?? getProductImageUrl(product)} alt={product.name} className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-700 group-hover:scale-105" />
+            <img src={images[activeImage] ?? getProductImageUrl(product)} alt={product.name} className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-700 group-hover:scale-[1.02]" />
 
             {/* Live Synchronized Personalization Engraving Layer */}
             {customizationData?.photo_url && activeImage === 0 && (
