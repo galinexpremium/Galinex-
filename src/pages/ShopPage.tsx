@@ -178,8 +178,8 @@ export default function ShopPage() {
               <button onClick={() => window.location.reload()} className="px-8 py-3 bg-walnut-900 dark:bg-cream text-ivory dark:text-walnut-900 text-sm font-medium rounded-card">Retry</button>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-square rounded-card bg-cream dark:bg-walnut-800 animate-pulse" />)}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-[4/5] rounded-2xl bg-cream dark:bg-walnut-800 animate-pulse" />)}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">
@@ -189,7 +189,7 @@ export default function ShopPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
               {filtered.map(product => <ProductCard key={product.id} product={product} />)}
             </div>
           )}

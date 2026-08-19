@@ -4,7 +4,7 @@ import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
 import type { Product, Review, CustomizationData } from '@/types';
 import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor, getProductImageUrl } from '@/lib/format';
-import { WHATSAPP_NUMBER } from '@/lib/supabase';
+import { openWhatsApp, buildProductInquiryMessage, buildMdfQuoteRequestMessage } from '@/lib/whatsapp';
 import ProductCard from '@/components/ProductCard';
 import ProductCustomizer from '@/components/ProductCustomizer';
 
@@ -21,6 +21,9 @@ export default function ProductDetailPage() {
   const [customizationData, setCustomizationData] = useState<CustomizationData | null>(null);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'faq'>('description');
   const [lightbox, setLightbox] = useState(false);
+  const [reviewTab, setReviewTab] = useState<'reviews' | 'write'>('reviews');
+  const [newReview, setNewReview] = useState({ reviewer_name: '', reviewer_email: '', rating: 5, comment: '', title: '' });
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -44,26 +47,30 @@ export default function ProductDetailPage() {
       }
       setLoading(false);
     })();
-  }, [slug, addRecentlyViewed]);
+  }, [slug]);
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, { quantity, customizationData: customizationData ?? undefined });
-    navigate('cart');
+    addToCart(product, {
+      quantity,
+      customization: customizationData?.text || undefined,
+      photo: customizationData?.photo_url || undefined,
+      customizationData: customizationData ?? undefined,
+    });
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
-    addToCart(product, { quantity, customizationData: customizationData ?? undefined });
+    handleAddToCart();
     navigate('checkout');
   };
 
   const handleWhatsAppOrder = () => {
     if (!product) return;
-    const price = getEffectivePrice(product);
-    const customizationText = customizationData?.text || (customizationData?.photo_url ? 'Photo uploaded' : '');
-    const msg = ['*GALINEX - Product Inquiry*', '', `Product: ${product.name}`, `Price: ${formatPrice(price)}`, `Quantity: ${quantity}`, customizationText ? `Customization: ${customizationText}` : '', '', 'I would like to order this product. Please guide me.'].filter(Boolean).join('\n');
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    const isPriced = (getEffectivePrice(product) > 0);
+    const msg = isPriced
+      ? buildProductInquiryMessage(product, customizationData)
+      : buildMdfQuoteRequestMessage(product);
+    openWhatsApp(msg);
   };
 
   if (loading) {
@@ -104,19 +111,19 @@ export default function ProductDetailPage() {
         <ChevronRight size={12} /><span className="text-walnut-700 dark:text-cream truncate">{product.name}</span>
       </nav>
 
-      <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
         {/* Images */}
-        <div>
-          <div className="relative aspect-square rounded-card overflow-hidden bg-cream dark:bg-walnut-800 cursor-pointer group" onClick={() => setLightbox(true)}>
-            {product.badge && <div className={`absolute top-5 left-5 z-10 px-3 py-1 text-[9px] font-semibold text-ivory uppercase tracking-wider2 ${badgeColor(product.badge)}`}>{badgeLabel(product.badge)}</div>}
-            {discount > 0 && <div className="absolute top-5 right-5 z-10 px-3 py-1 bg-walnut-900 text-ivory text-[9px] font-semibold tracking-wider">-{discount}%</div>}
-            <img src={images[activeImage] ?? ''} alt={product.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+        <div className="lg:sticky lg:top-28">
+          <div className="relative aspect-[4/5] max-w-[480px] mx-auto rounded-2xl overflow-hidden bg-[#0d0b0a] border border-gold-400/20 shadow-2xl cursor-pointer group" onClick={() => setLightbox(true)}>
+            {product.badge && <div className={`absolute top-4 left-4 z-10 px-3 py-1 text-[9px] font-semibold text-ivory uppercase tracking-wider rounded-md shadow-md ${badgeColor(product.badge)}`}>{badgeLabel(product.badge)}</div>}
+            {discount > 0 && <div className="absolute top-4 right-4 z-10 px-2.5 py-1 bg-walnut-950/90 text-gold-300 text-[9px] font-semibold tracking-wider rounded-md border border-gold-500/30">-{discount}%</div>}
+            <img src={images[activeImage] ?? getProductImageUrl(product)} alt={product.name} className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-700 group-hover:scale-105" />
           </div>
           {images.length > 1 && (
-            <div className="flex gap-3 mt-5 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-3 mt-4 justify-center overflow-x-auto pb-2 scrollbar-hide">
               {images.map((img, i) => (
-                <button key={i} onClick={() => setActiveImage(i)} className={`w-20 h-20 rounded-card overflow-hidden flex-shrink-0 border transition-all duration-300 ${activeImage === i ? 'border-champagne-500' : 'border-transparent opacity-60 hover:opacity-100'}`}>
-                  <img src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                <button key={i} onClick={() => setActiveImage(i)} className={`w-16 h-20 rounded-xl overflow-hidden flex-shrink-0 border bg-[#0d0b0a] transition-all duration-300 ${activeImage === i ? 'border-gold-500 ring-2 ring-gold-500/50' : 'border-gold-200/20 opacity-60 hover:opacity-100'}`}>
+                  <img src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-contain p-1" />
                 </button>
               ))}
             </div>
@@ -176,18 +183,20 @@ export default function ProductDetailPage() {
           {/* Actions */}
           {price > 0 ? (
             <>
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <button onClick={handleAddToCart} className="flex-1 py-4 border border-walnut-800 dark:border-cream/30 text-walnut-800 dark:text-cream font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 hover:bg-walnut-900 dark:hover:bg-cream hover:text-ivory dark:hover:text-walnut-900 transition-all duration-500 rounded-card">
-                  <ShoppingBag size={17} /> Add to Cart
+              <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                <button onClick={handleAddToCart} className="flex-1 py-3.5 border border-gold-400/50 dark:border-gold-500/40 text-walnut-900 dark:text-cream font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-gold-500/10 transition-colors rounded-xl">
+                  <ShoppingBag size={16} /> Add to Cart
                 </button>
-                <button onClick={handleBuyNow} className="flex-1 py-4 bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium text-sm tracking-wide transition-colors duration-500 rounded-card">Buy Now</button>
+                <button onClick={handleBuyNow} className="flex-1 py-3.5 bg-gold-600 hover:bg-gold-500 text-ivory font-semibold text-xs uppercase tracking-wider transition-colors rounded-xl shadow-md">
+                  Buy Now
+                </button>
               </div>
-              <button onClick={handleWhatsAppOrder} className="w-full py-4 bg-green-600 hover:bg-green-700 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors duration-500 rounded-card mb-6">
-                <MessageCircle size={18} fill="white" /> Order via WhatsApp
+              <button onClick={handleWhatsAppOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors rounded-xl mb-6 shadow-md">
+                <MessageCircle size={16} fill="white" /> Order via WhatsApp
               </button>
             </>
           ) : (
-            <button onClick={handleWhatsAppOrder} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-ivory font-medium text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors duration-500 rounded-card mb-6 shadow-md shadow-emerald-600/20">
+            <button onClick={handleWhatsAppOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-ivory font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors rounded-xl mb-6 shadow-md shadow-emerald-600/20">
               <MessageCircle size={18} fill="white" /> Inquire Price & Custom Size on WhatsApp
             </button>
           )}

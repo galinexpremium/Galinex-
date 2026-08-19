@@ -1,6 +1,16 @@
-import type { CartItem, ShippingAddress, Order } from '@/types';
+import type { CartItem, ShippingAddress, Product, CustomizationData } from '@/types';
 import { formatPrice } from './format';
 import { WHATSAPP_NUMBER } from './supabase';
+
+export function buildDirectWhatsAppUrl(message: string, number: string = WHATSAPP_NUMBER): string {
+  const sanitized = number.replace(/[^0-9]/g, '');
+  return `https://wa.me/${sanitized}?text=${encodeURIComponent(message)}`;
+}
+
+export function openWhatsApp(message: string, number: string = WHATSAPP_NUMBER): void {
+  const url = buildDirectWhatsAppUrl(message, number);
+  window.open(url, '_blank');
+}
 
 export function buildWhatsAppOrderMessage(
   items: CartItem[],
@@ -14,51 +24,85 @@ export function buildWhatsAppOrderMessage(
   orderNumber?: string
 ): string {
   const lines: string[] = [];
-  lines.push('*GALINEX - New Order*');
-  if (orderNumber) lines.push(`Order: ${orderNumber}`);
-  lines.push('');
-  lines.push('*Customer Details*');
+  lines.push('*GALINEX LUXURY GIFTS - NEW ORDER*');
+  if (orderNumber) lines.push(`Order ID: ${orderNumber}`);
+  lines.push('----------------------------------------');
+  lines.push('*Customer Details:*');
   lines.push(`Name: ${address.full_name}`);
   lines.push(`Phone: ${address.phone}`);
   if (address.email) lines.push(`Email: ${address.email}`);
   lines.push('');
-  lines.push('*Shipping Address*');
+  lines.push('*Delivery Address:*');
   lines.push(`${address.address_line1}`);
   if (address.address_line2) lines.push(`${address.address_line2}`);
   lines.push(`${address.city}, ${address.state} - ${address.pincode}`);
   if (address.landmark) lines.push(`Landmark: ${address.landmark}`);
   lines.push('');
-  lines.push('*Products*');
+  lines.push('*Ordered Items:*');
   items.forEach((item, i) => {
-    lines.push(`${i + 1}. ${item.product?.name || 'Product'}`);
+    lines.push(`${i + 1}. *${item.product?.name || 'Product'}*`);
+    if (item.product?.dimensions) lines.push(`   Dimensions: ${item.product.dimensions}`);
     if (item.variant_name) lines.push(`   Variant: ${item.variant_name}`);
-    lines.push(`   Qty: ${item.quantity}`);
+    lines.push(`   Quantity: ${item.quantity}`);
     lines.push(`   Price: ${formatPrice((item.product?.sale_price ?? item.product?.base_price ?? 0) * item.quantity)}`);
-    if (item.customization_text) lines.push(`   Customization: ${item.customization_text}`);
-    if (item.photo_url) lines.push(`   Photo: ${item.photo_url}`);
+    if (item.customization_text) lines.push(`   Engraving Text: "${item.customization_text}"`);
+    if (item.customization_data?.filter) lines.push(`   Engraving Style: ${item.customization_data.filter.toUpperCase()}`);
+    if (item.photo_url) lines.push(`   Photo Upload: Attached / Confirmed`);
   });
   lines.push('');
-  lines.push('*Order Summary*');
+  lines.push('----------------------------------------');
+  lines.push('*Order Summary:*');
   lines.push(`Subtotal: ${formatPrice(subtotal)}`);
   if (discount > 0) {
     lines.push(`Discount${couponCode ? ` (${couponCode})` : ''}: -${formatPrice(discount)}`);
   }
   lines.push(`Shipping: ${shipping === 0 ? 'FREE' : formatPrice(shipping)}`);
-  lines.push(`*Total: ${formatPrice(total)}*`);
-  lines.push('');
-  lines.push(`Payment: ${paymentMethod.toUpperCase()}`);
-  lines.push('');
-  lines.push('Please confirm my order. Thank you!');
+  lines.push(`*Total Amount: ${formatPrice(total)}*`);
+  lines.push(`Payment Method: ${paymentMethod.toUpperCase()}`);
+  lines.push('----------------------------------------');
+  lines.push('Please confirm my order and share estimated dispatch details. Thank you!');
 
   return lines.join('\n');
 }
 
-export function openWhatsApp(message: string, number: string = WHATSAPP_NUMBER): void {
-  const encoded = encodeURIComponent(message);
-  const url = `https://wa.me/${number}?text=${encoded}`;
-  window.open(url, '_blank');
+export function buildProductInquiryMessage(
+  product: Product,
+  customizationData?: CustomizationData | null
+): string {
+  const lines: string[] = [];
+  lines.push('*GALINEX PRODUCT INQUIRY*');
+  lines.push(`Product: *${product.name}*`);
+  if (product.dimensions) lines.push(`Dimensions: ${product.dimensions}`);
+  if (product.material) lines.push(`Material: ${product.material}`);
+  if (product.sale_price || product.base_price) {
+    lines.push(`Price: ${formatPrice(product.sale_price ?? product.base_price)}`);
+  }
+  if (customizationData?.text) {
+    lines.push(`Custom Engraving: "${customizationData.text}"`);
+  }
+  if (customizationData?.filter) {
+    lines.push(`Style: ${customizationData.filter.toUpperCase()}`);
+  }
+  lines.push('');
+  lines.push('Hello GALINEX team, I would like to inquire about this product and personalization options.');
+  return lines.join('\n');
+}
+
+export function buildMdfQuoteRequestMessage(product: Product): string {
+  const lines: string[] = [];
+  lines.push('*GALINEX MDF CUSTOM QUOTE REQUEST*');
+  lines.push(`Collection: *${product.name}*`);
+  lines.push('Category: MDF Custom Cutouts & Multi-Photo Wall Collages');
+  lines.push('');
+  lines.push('Hi GALINEX team, I would like to request a custom price quote for an MDF Cutout/Collage project.');
+  lines.push('- Required Dimensions: (e.g. 2x3 ft, 3x4 ft, custom shape)');
+  lines.push('- Number of Photos / Design: (e.g. Family tree, Anniversary collage, Brand logo)');
+  lines.push('- Delivery Location / Pincode:');
+  lines.push('');
+  lines.push('Please share your catalogue options and quotation.');
+  return lines.join('\n');
 }
 
 export function buildOrderTrackingMessage(orderNumber: string): string {
-  return `Hi GALINEX, I'd like to track my order: ${orderNumber}`;
+  return `Hi GALINEX, I would like to track my order: *${orderNumber}*`;
 }
