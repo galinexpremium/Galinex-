@@ -40,7 +40,7 @@ def create_studio_canvas(width=800, height=1000):
     return bg
 
 def trim_catalogue_banners(crop_img):
-    """Detects and trims bright banner labels at the top or bottom of a cell"""
+    """Detects and trims bright banner labels at the top or bottom of a cell without cutting the physical product"""
     w, h = crop_img.size
     
     # 1. Scan from bottom upwards for bright horizontal text banner
@@ -85,7 +85,7 @@ def isolate_and_composite(crop_img, out_path, is_white_bg=False, fill_ratio=0.82
     
     if is_white_bg:
         # Wood plaque segmentation: remove white/light paper background
-        datas = rgba.getdata()
+        datas = list(rgba.getdata())
         new_data = []
         for item in datas:
             r, g, b, a = item
@@ -111,7 +111,7 @@ def isolate_and_composite(crop_img, out_path, is_white_bg=False, fill_ratio=0.82
             rgba = rgba.crop((bx1, by1, bx2, by2))
             cw, ch = rgba.size
     else:
-        # Dark studio background product (crystals, moon lamps, acrylic)
+        # Dark studio background product (crystals, moon lamps, acrylic, speaker, MDF)
         mask = Image.new("L", (cw, ch), 255)
         draw_m = ImageDraw.Draw(mask)
         # Soft 6px edge vignette
@@ -121,13 +121,13 @@ def isolate_and_composite(crop_img, out_path, is_white_bg=False, fill_ratio=0.82
         mask = mask.filter(ImageFilter.GaussianBlur(3))
         rgba.putalpha(mask)
         
-    # 3. Enhance clarity and contrast subtly
+    # 3. Enhance clarity and contrast subtly without altering physical product photography
     r, g, b, a = rgba.split()
     rgb = Image.merge("RGB", (r, g, b))
     enhancer = ImageEnhance.Sharpness(rgb)
-    rgb = enhancer.enhance(1.18)
+    rgb = enhancer.enhance(1.15)
     enhancer = ImageEnhance.Contrast(rgb)
-    rgb = enhancer.enhance(1.06)
+    rgb = enhancer.enhance(1.05)
     r, g, b = rgb.split()
     rgba = Image.merge("RGBA", (r, g, b, a))
     
@@ -309,43 +309,45 @@ for slug, r, c in p8_items:
     isolate_and_composite(crop, f"public/products/wooden-engraving/{slug}.webp", is_white_bg=True, fill_ratio=0.84)
 
 # =============================================================
-# PAGE 9: ACRYLIC & LED FRAMES (2 products)
+# PAGE 9: ACRYLIC 6x4 ENGRAVING BLOCK (Page index 8)
 # =============================================================
 p9 = pages[8]
 W9, H9 = p9.size
-# Top item: 6x4 Acrylic Engraving Block (showcasing crystal-clear acrylic engraving block)
-crop_p9_1 = p9.crop((int(0.05 * W9), int(0.29 * H9), int(0.48 * W9), int(0.515 * H9)))
-isolate_and_composite(crop_p9_1, "public/products/acrylic-led/6x4-acrylic-engraving-block.webp", is_white_bg=False, fill_ratio=0.84)
-
-# Bottom item: 6x8 Acrylic Wood Frame with Light (showcasing acrylic photo block with warm wooden LED base)
-crop_p9_2 = p9.crop((int(0.05 * W9), int(0.585 * H9), int(0.48 * W9), int(0.795 * H9)))
-isolate_and_composite(crop_p9_2, "public/products/acrylic-led/6x8-acrylic-wood-frame-with-light.webp", is_white_bg=False, fill_ratio=0.84)
+crop_p9 = p9.crop((int(0.06 * W9), int(0.31 * H9), int(0.28 * W9), int(0.55 * H9)))
+isolate_and_composite(crop_p9, "public/products/acrylic-led/6x4-acrylic-engraving-block.webp", is_white_bg=False, fill_ratio=0.84)
 
 # =============================================================
-# PAGE 10: MOON LAMPS & SPEAKERS (4 products)
+# PAGE 10: 6x8 ACRYLIC WOOD FRAME WITH LIGHT (Page index 9)
 # =============================================================
 p10 = pages[9]
 W10, H10 = p10.size
-# Row 0: Personalized Bluetooth Speaker (left), 2D 12CM Moon Lamp (right)
-crop_p10_1 = p10.crop((int(0.06 * W10), int(0.285 * H10), int(0.48 * W10), int(0.535 * H10)))
-isolate_and_composite(crop_p10_1, "public/products/moon-lamps/personalized-bluetooth-speaker.webp", is_white_bg=False, fill_ratio=0.84)
-
-crop_p10_2 = p10.crop((int(0.52 * W10), int(0.285 * H10), int(0.94 * W10), int(0.535 * H10)))
-isolate_and_composite(crop_p10_2, "public/products/moon-lamps/2d-12-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
-
-# Row 1: 2D 15CM Moon Lamp (left), 3D 15CM Moon Lamp (right)
-crop_p10_3 = p10.crop((int(0.06 * W10), int(0.575 * H10), int(0.48 * W10), int(0.795 * H10)))
-isolate_and_composite(crop_p10_3, "public/products/moon-lamps/2d-15-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
-
-crop_p10_4 = p10.crop((int(0.52 * W10), int(0.575 * H10), int(0.94 * W10), int(0.795 * H10)))
-isolate_and_composite(crop_p10_4, "public/products/moon-lamps/3d-15-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
+crop_p10 = p10.crop((int(0.06 * W10), int(0.31 * H10), int(0.30 * W10), int(0.55 * H10)))
+isolate_and_composite(crop_p10, "public/products/acrylic-led/6x8-acrylic-wood-frame-with-light.webp", is_white_bg=False, fill_ratio=0.84)
 
 # =============================================================
-# PAGE 11: MDF DECOR COLLECTION (1 product)
+# PAGE 11: MOON LAMPS, BLUETOOTH SPEAKER & MDF (Page index 10)
 # =============================================================
 p11 = pages[10]
 W11, H11 = p11.size
-crop_p11 = p11.crop((int(0.06 * W11), int(0.275 * H11), int(0.94 * W11), int(0.81 * H11)))
-isolate_and_composite(crop_p11, "public/products/mdf-decor/mdf-custom-cutout-and-collage-collection.webp", is_white_bg=False, fill_ratio=0.88)
 
-print("All 51 official GALINEX product assets successfully generated!")
+# Col 0: 2D 12 CM Moon Lamp
+crop_moon_12 = p11.crop((int(0.05 * W11), int(0.27 * H11), int(0.25 * W11), int(0.48 * H11)))
+isolate_and_composite(crop_moon_12, "public/products/moon-lamps/2d-12-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
+
+# Col 1: 2D 15 CM Moon Lamp
+crop_moon_15 = p11.crop((int(0.28 * W11), int(0.27 * H11), int(0.48 * W11), int(0.48 * H11)))
+isolate_and_composite(crop_moon_15, "public/products/moon-lamps/2d-15-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
+
+# Col 2: 3D 15 CM Moon Lamp
+crop_moon_3d = p11.crop((int(0.51 * W11), int(0.27 * H11), int(0.72 * W11), int(0.48 * H11)))
+isolate_and_composite(crop_moon_3d, "public/products/moon-lamps/3d-15-cm-moon-lamp.webp", is_white_bg=False, fill_ratio=0.84)
+
+# Col 3: Personalized Bluetooth Speaker
+crop_speaker = p11.crop((int(0.74 * W11), int(0.27 * H11), int(0.95 * W11), int(0.48 * H11)))
+isolate_and_composite(crop_speaker, "public/products/moon-lamps/personalized-bluetooth-speaker.webp", is_white_bg=False, fill_ratio=0.84)
+
+# Bottom: MDF Custom Cutout and Collage Collection
+crop_mdf = p11.crop((int(0.06 * W11), int(0.54 * H11), int(0.94 * W11), int(0.85 * H11)))
+isolate_and_composite(crop_mdf, "public/products/mdf-decor/mdf-custom-cutout-and-collage-collection.webp", is_white_bg=False, fill_ratio=0.88)
+
+print("\n--- ALL 51 PRODUCT ASSETS EXTRACTED FROM AUTHENTIC OFFICIAL CATALOGUE PAGES ---")
