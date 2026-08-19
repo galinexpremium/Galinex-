@@ -43,3 +43,15 @@ export function badgeColor(badge: string | null): string {
     default: return 'bg-gray-500';
   }
 }
+
+export function getProductImageUrl(product?: { slug?: string; image_url?: string | null; category?: { slug?: string } | null } | null): string {
+  if (!product) return '/products/3d-crystal-gifts/5x5x8-3d-crystal-single-image.webp';
+  if (product.image_url && (product.image_url.startsWith('http://') || product.image_url.startsWith('https://') || product.image_url.startsWith('/products/'))) {
+    return product.image_url;
+  }
+  const cat = product.category?.slug || '3d-crystal-gifts';
+  if (product.slug) {
+    return `/products/${cat}/${product.slug}.webp`;
+  }
+  return '/products/3d-crystal-gifts/5x5x8-3d-crystal-single-image.webp';
+}

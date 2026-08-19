@@ -5,7 +5,7 @@ import { useAuth } from '@/store/AuthContext';
 import { BRAND_NAME, BRAND_PHONE } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/types';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, getProductImageUrl } from '@/lib/format';
 
 export default function Navbar() {
   const { navigate, currentPage, cartCount, wishlistCount, compareCount, isMenuOpen, setMenuOpen, isSearchOpen, setSearchOpen, setCatalogueOpen } = useStore();
@@ -232,7 +232,7 @@ export default function Navbar() {
                         }}
                         className="w-full flex items-center gap-4 p-3 rounded-input hover:bg-cream/50 dark:hover:bg-walnut-900/50 text-left transition-colors duration-300"
                       >
-                        <img src={product.image_url ?? ''} alt={product.name} className="w-14 h-14 rounded-card object-cover" />
+                        <img src={getProductImageUrl(product)} alt={product.name} className="w-14 h-14 rounded-card object-cover" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-walnut-900 dark:text-cream font-display">{product.name}</p>
                           <p className="text-xs text-walnut-500">{formatPrice(product.sale_price ?? product.base_price)}</p>

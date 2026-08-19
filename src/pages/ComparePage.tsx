@@ -1,6 +1,6 @@
 import { X, Check, BarChart3 } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
-import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, getProductImageUrl } from '@/lib/format';
 
 export default function ComparePage() {
   const { compareItems, toggleCompare, navigate, clearCompare } = useStore();
@@ -14,8 +14,8 @@ export default function ComparePage() {
           </div>
           <h1 className="text-3xl font-display text-walnut-900 dark:text-ivory mb-3 tracking-tight">No Products to Compare</h1>
           <div className="w-16 h-px bg-champagne-300 mx-auto mb-4" />
-          <p className="text-walnut-500 dark:text-beige-400 mb-8 max-w-md mx-auto">Add products to compare their features side by side.</p>
-          <button onClick={() => navigate('shop')} className="px-10 py-3.5 rounded-card bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium tracking-wide transition-colors">
+          <p className="text-walnut-500 dark:text-beige-400 mb-8 max-w-md mx-auto">Select up to 4 products from our collection to compare features and specifications.</p>
+          <button onClick={() => navigate('shop')} className="px-8 py-3 rounded-card bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium tracking-wide transition-colors">
             Browse Products
           </button>
         </div>
@@ -39,7 +39,7 @@ export default function ComparePage() {
     <div className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-display text-walnut-900 dark:text-ivory tracking-tight">Compare Products</h1>
+          <h1 className="text-4xl font-display text-walnut-900 dark:text-ivory tracking-tight">Product Comparison</h1>
           <div className="mt-3 h-px bg-gradient-to-r from-champagne-400 via-champagne-200 to-transparent" />
         </div>
         <button onClick={clearCompare} className="text-sm text-walnut-500 hover:text-rose-500 transition-colors tracking-wide">
@@ -63,7 +63,7 @@ export default function ComparePage() {
                     </button>
                     <button onClick={() => navigate('product', { slug: product.slug })} className="block w-full">
                       <div className="aspect-square rounded-card overflow-hidden bg-cream dark:bg-walnut-800 mb-3 border border-champagne-200/20">
-                        <img src={product.image_url ?? ''} alt={product.name} className="w-full h-full object-cover" />
+                        <img src={getProductImageUrl(product)} alt={product.name} className="w-full h-full object-cover" />
                       </div>
                       <h3 className="font-medium text-sm text-walnut-900 dark:text-ivory text-left hover:text-champagne-600 transition-colors line-clamp-2 tracking-wide">{product.name}</h3>
                     </button>

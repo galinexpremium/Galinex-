@@ -147,7 +147,14 @@ export default function HomePage() {
                 className="group relative aspect-[3/4.5] rounded-card overflow-hidden bg-cream dark:bg-walnut-800"
               >
                 <img
-                  src={cat.image_url ?? undefined}
+                  src={cat.image_url || {
+                    '3d-crystal-gifts': '/products/3d-crystal-gifts/6x6x10-3d-crystal-couple-image.webp',
+                    'crystal-keychains': '/products/crystal-keychains/heart-crystal-keychain.webp',
+                    'wooden-engraving': '/products/wooden-engraving/12x8-wooden-engraving-plaque.webp',
+                    'acrylic-led': '/products/acrylic-led/6x8-acrylic-wood-frame-with-light.webp',
+                    'moon-lamps': '/products/moon-lamps/3d-15-cm-moon-lamp.webp',
+                    'mdf-decor': '/products/mdf-decor/mdf-custom-cutout-and-collage-collection.webp',
+                  }[cat.slug] || '/products/3d-crystal-gifts/6x6x10-3d-crystal-couple-image.webp'}
                   alt={cat.name}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"

@@ -4,7 +4,7 @@ import {
   MapPin, CheckCircle, ExternalLink, Filter, Search, BookOpen,
 } from 'lucide-react';
 import { supabase, BRAND_NAME, BRAND_PHONE, BRAND_EMAIL, BRAND_ADDRESS, WHATSAPP_NUMBER } from '@/lib/supabase';
-import { formatPrice, getEffectivePrice } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getProductImageUrl } from '@/lib/format';
 import type { Product, Category } from '@/types';
 
 interface PdfCatalogueModalProps {
@@ -189,7 +189,7 @@ export default function PdfCatalogueModal({ isOpen, onClose }: PdfCatalogueModal
                         {/* Image */}
                         <div className="aspect-[4/3] rounded-card overflow-hidden bg-cream dark:bg-walnut-800 mb-3 relative">
                           <img
-                            src={p.image_url ?? undefined}
+                            src={getProductImageUrl(p)}
                             alt={p.name}
                             className="w-full h-full object-cover"
                           />

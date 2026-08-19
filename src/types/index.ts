@@ -79,9 +79,17 @@ export interface Coupon {
 
 export interface CustomizationData {
   photo_url: string | null;
+  processed_photo_url?: string | null;
+  preview_thumbnail?: string | null;
   text: string;
   font: string;
   text_color: string;
+  filter?: string;
+  brightness?: number;
+  contrast?: number;
+  rotation?: number;
+  approved?: boolean;
+  approved_at?: string;
   text_position: { x: number; y: number };
   photo_transform: {
     x: number;

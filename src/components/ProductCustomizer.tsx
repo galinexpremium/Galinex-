@@ -1,54 +1,73 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import {
-  Upload, ZoomIn, ZoomOut, RotateCw, RotateCcw, Crop, Check, X, Trash2,
-  Type, Move, Sparkles, RefreshCw,
+  Upload, ZoomIn, ZoomOut, RotateCw, Check, Trash2,
+  Type, Sparkles, RefreshCw, Wand2, Eye, ShieldCheck, Sun, Contrast
 } from 'lucide-react';
-import type { CustomizationData } from '@/types';
+import type { CustomizationData, Product } from '@/types';
 
 const FONTS = [
-  { value: "'Cormorant Garamond', serif", label: 'Elegant Serif' },
-  { value: "'Inter', sans-serif", label: 'Modern Sans' },
-  { value: "'Playfair Display', serif", label: 'Classic Display' },
-  { value: "'Georgia', serif", label: 'Georgia' },
-  { value: "'Arial', sans-serif", label: 'Arial' },
-  { value: "'Courier New', monospace", label: 'Monospace' },
+  { value: "'Cormorant Garamond', serif", label: 'Cormorant (Luxury Serif)' },
+  { value: "'Cinzel', serif", label: 'Cinzel (Classical Engraved)' },
+  { value: "'Playfair Display', serif", label: 'Playfair (Editorial)' },
+  { value: "'Inter', sans-serif", label: 'Inter (Modern Clean)' },
+  { value: "'Montserrat', sans-serif", label: 'Montserrat (Bold Clean)' },
 ];
 
-const TEXT_COLORS = [
-  { value: '#1a1a1a', label: 'Black' },
-  { value: '#8B7355', label: 'Bronze' },
-  { value: '#C4A35A', label: 'Gold' },
-  { value: '#FFFFFF', label: 'White' },
-  { value: '#8B0000', label: 'Maroon' },
-  { value: '#2F4F4F', label: 'Slate' },
-];
+const AI_FILTERS = [
+  { id: 'original', name: 'Original', desc: 'Natural photo colors', icon: '📸' },
+  { id: 'laser_bw', name: '3D Laser B&W', desc: 'Optimized high-contrast sub-surface laser point etching', icon: '✨' },
+  { id: 'wood_etch', name: 'Wood Engraving', desc: 'Laser burned sepia tone on natural wood grain', icon: '🪵' },
+  { id: 'hd_boost', name: 'HD Portrait Clarity', desc: 'Sharpened edges and balanced exposure', icon: '🔍' },
+  { id: 'lithophane', name: 'Moon Lamp Glow', desc: 'Warm internal lithophane diffusion', icon: '🌕' },
+] as const;
 
-const DEFAULT_CUSTOMIZATION: CustomizationData = {
+export const DEFAULT_CUSTOMIZATION: CustomizationData = {
   photo_url: null,
+  processed_photo_url: null,
+  preview_thumbnail: null,
   text: '',
   font: FONTS[0].value,
-  text_color: '#1a1a1a',
-  text_position: { x: 50, y: 85 },
-  photo_transform: { x: 50, y: 50, scale: 1, rotation: 0 },
+  text_color: '#FFFFFF',
+  filter: 'laser_bw',
+  brightness: 100,
+  contrast: 110,
+  rotation: 0,
+  approved: false,
+  text_position: { x: 50, y: 84 },
+  photo_transform: { x: 50, y: 48, scale: 1, rotation: 0 },
   crop: null,
 };
 
 interface ProductCustomizerProps {
+  product?: Product;
   productImage: string;
   productName: string;
   onChange: (data: CustomizationData) => void;
+  onApprove?: (data: CustomizationData) => void;
 }
 
-export default function ProductCustomizer({ productImage, productName, onChange }: ProductCustomizerProps) {
+export default function ProductCustomizer({
+  product,
+  productImage,
+  productName,
+  onChange,
+  onApprove,
+}: ProductCustomizerProps) {
   const [data, setData] = useState<CustomizationData>(DEFAULT_CUSTOMIZATION);
-  const [rawPhoto, setRawPhoto] = useState<string | null>(null);
-  const [cropping, setCropping] = useState(false);
-  const [draggingPhoto, setDraggingPhoto] = useState(false);
-  const [draggingText, setDraggingText] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+  const [activeTab, setActiveTab] = useState<'upload' | 'ai_prep' | 'engraving' | 'preview'>('upload');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { onChange(data); }, [data, onChange]);
+  const categorySlug = product?.category?.slug || '';
+  const isCrystal = categorySlug.includes('crystal') || categorySlug.includes('3d');
+  const isWood = categorySlug.includes('wood');
+  const isAcrylic = categorySlug.includes('acrylic');
+  const isMoonLamp = categorySlug.includes('moon');
+
+  useEffect(() => {
+    onChange(data);
+  }, [data, onChange]);
 
   const update = useCallback((patch: Partial<CustomizationData>) => {
     setData(prev => ({ ...prev, ...patch }));
@@ -57,364 +76,435 @@ export default function ProductCustomizer({ productImage, productName, onChange 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      setRawPhoto(reader.result as string);
-      setCropping(true);
+      const result = reader.result as string;
+      update({
+        photo_url: result,
+        processed_photo_url: result,
+        filter: isWood ? 'wood_etch' : isMoonLamp ? 'lithophane' : 'laser_bw',
+        approved: false,
+      });
+      setActiveTab('ai_prep');
     };
     reader.readAsDataURL(file);
   };
 
-  const handleCropComplete = (crop: { x: number; y: number; width: number; height: number }) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = crop.width;
-      canvas.height = crop.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      update({ photo_url: croppedDataUrl, crop, photo_transform: { x: 50, y: 50, scale: 1, rotation: 0 } });
-      setRawPhoto(null);
-      setCropping(false);
-    };
-    img.src = rawPhoto!;
+  const handleSamplePhoto = () => {
+    // High quality couple portrait sample for instant preview
+    const sample = 'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg?auto=compress&cs=tinysrgb&w=800';
+    update({
+      photo_url: sample,
+      processed_photo_url: sample,
+      text: 'Forever Together',
+      filter: isWood ? 'wood_etch' : isMoonLamp ? 'lithophane' : 'laser_bw',
+      approved: false,
+    });
+    setActiveTab('ai_prep');
   };
 
-  const removePhoto = () => {
-    update({ photo_url: null, crop: null });
-    setRawPhoto(null);
-  };
+  const applyAIFilter = (filterId: typeof AI_FILTERS[number]['id']) => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      let b = 100;
+      let c = 110;
+      let textColor = '#FFFFFF';
 
-  const resetAll = () => {
-    setData(DEFAULT_CUSTOMIZATION);
-    setRawPhoto(null);
-  };
-
-  // Drag handlers for repositioning photo and text on the preview
-  const handlePointerDown = (e: React.PointerEvent, target: 'photo' | 'text') => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      posX: target === 'photo' ? data.photo_transform.x : data.text_position.x,
-      posY: target === 'photo' ? data.photo_transform.y : data.text_position.y,
-    };
-    if (target === 'photo') setDraggingPhoto(true);
-    else setDraggingText(true);
-  };
-
-  useEffect(() => {
-    if (!draggingPhoto && !draggingText) return;
-    const handleMove = (e: PointerEvent) => {
-      if (!previewRef.current) return;
-      const rect = previewRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragStart.current.x) / rect.width) * 100;
-      const dy = ((e.clientY - dragStart.current.y) / rect.height) * 100;
-      if (draggingPhoto) {
-        update({ photo_transform: { ...data.photo_transform, x: Math.max(0, Math.min(100, dragStart.current.posX + dx)), y: Math.max(0, Math.min(100, dragStart.current.posY + dy)) } });
-      } else if (draggingText) {
-        update({ text_position: { x: Math.max(0, Math.min(100, dragStart.current.posX + dx)), y: Math.max(0, Math.min(100, dragStart.current.posY + dy)) } });
+      if (filterId === 'laser_bw') {
+        b = 105;
+        c = 135;
+        textColor = '#FFFFFF';
+      } else if (filterId === 'wood_etch') {
+        b = 95;
+        c = 125;
+        textColor = '#3a2012';
+      } else if (filterId === 'hd_boost') {
+        b = 110;
+        c = 120;
+        textColor = isWood ? '#3a2012' : '#FFFFFF';
+      } else if (filterId === 'lithophane') {
+        b = 115;
+        c = 130;
+        textColor = '#ffe8c2';
       }
-    };
-    const handleUp = () => { setDraggingPhoto(false); setDraggingText(false); };
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-    };
-  }, [draggingPhoto, draggingText, data.photo_transform, data.text_position, update]);
 
-  const hasPhoto = !!data.photo_url;
-  const hasText = !!data.text;
+      update({
+        filter: filterId,
+        brightness: b,
+        contrast: c,
+        text_color: textColor,
+      });
+      setIsProcessing(false);
+    }, 250);
+  };
+
+  const generatePreviewSnapshot = () => {
+    update({ approved: true, approved_at: new Date().toISOString() });
+    if (onApprove) onApprove({ ...data, approved: true });
+  };
+
+  // Compute CSS filter style
+  const getPhotoFilterStyle = () => {
+    const b = data.brightness ?? 100;
+    const c = data.contrast ?? 110;
+    let filterString = `brightness(${b}%) contrast(${c}%)`;
+
+    if (data.filter === 'laser_bw') {
+      filterString += ' grayscale(100%) drop-shadow(0 0 8px rgba(255,255,255,0.4))';
+    } else if (data.filter === 'wood_etch') {
+      filterString += ' sepia(70%) grayscale(40%) contrast(140%)';
+    } else if (data.filter === 'lithophane') {
+      filterString += ' sepia(30%) grayscale(50%) brightness(115%)';
+    }
+    return filterString;
+  };
 
   return (
-    <div className="space-y-5">
-      {/* Live Preview */}
-      <div>
-        <p className="text-xs font-medium text-walnut-500 dark:text-beige-400 mb-2 tracking-wide uppercase flex items-center gap-1.5">
-          <Sparkles size={12} className="text-champagne-600" /> Live Preview
-        </p>
-        <div
-          ref={previewRef}
-          className="relative aspect-square rounded-card overflow-hidden bg-cream dark:bg-walnut-800 border border-champagne-200/30 dark:border-champagne-900/20 select-none"
-        >
-          {/* Product base image */}
-          <img src={productImage} alt={productName} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-
-          {/* Photo overlay */}
-          {hasPhoto && (
-            <div
-              onPointerDown={(e) => handlePointerDown(e, 'photo')}
-              className="absolute cursor-move"
-              style={{
-                left: `${data.photo_transform.x}%`,
-                top: `${data.photo_transform.y}%`,
-                transform: `translate(-50%, -50%) scale(${data.photo_transform.scale}) rotate(${data.photo_transform.rotation}deg)`,
-                width: '45%',
-                aspectRatio: '1',
-              }}
-            >
-              <img
-                src={data.photo_url!}
-                alt="Custom"
-                className="w-full h-full object-cover rounded-full shadow-2xl ring-2 ring-white/60 pointer-events-none"
-                draggable={false}
-              />
-            </div>
-          )}
-
-          {/* Text overlay */}
-          {hasText && (
-            <div
-              onPointerDown={(e) => handlePointerDown(e, 'text')}
-              className="absolute cursor-move px-3 py-1 text-center max-w-[80%]"
-              style={{
-                left: `${data.text_position.x}%`,
-                top: `${data.text_position.y}%`,
-                transform: 'translate(-50%, -50%)',
-                fontFamily: data.font,
-                color: data.text_color,
-                fontSize: 'clamp(14px, 3vw, 22px)',
-                textShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                whiteSpace: 'pre-wrap',
-                lineHeight: 1.2,
-              }}
-            >
-              {data.text}
-            </div>
-          )}
-
-          {/* Hint */}
-          {!hasPhoto && !hasText && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-sm text-walnut-400 dark:text-walnut-500 font-light px-4 text-center">
-                Upload a photo and add text to see your design
-              </p>
-            </div>
-          )}
-
-          {/* Drag hint badge */}
-          {(hasPhoto || hasText) && (
-            <div className="absolute bottom-2 right-2 text-[10px] px-2 py-1 rounded-full bg-walnut-950/60 text-cream/80 flex items-center gap-1 pointer-events-none">
-              <Move size={10} /> Drag to reposition
-            </div>
-          )}
-        </div>
+    <div className="space-y-6">
+      {/* Step Navigation Bar */}
+      <div className="flex items-center justify-between border-b border-gold-200/30 dark:border-gold-900/30 pb-3 overflow-x-auto gap-2">
+        {[
+          { key: 'upload', label: '1. Photo Upload' },
+          { key: 'ai_prep', label: '2. AI Preparation' },
+          { key: 'engraving', label: '3. Text & Message' },
+          { key: 'preview', label: '4. Final Approval' },
+        ].map((step, idx) => (
+          <button
+            key={step.key}
+            onClick={() => setActiveTab(step.key as any)}
+            className={`px-3 py-1.5 text-xs font-medium tracking-wider uppercase rounded-full transition-all duration-300 whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === step.key
+                ? 'bg-gold-600 text-ivory shadow-md'
+                : 'text-walnut-500 dark:text-beige-400 hover:text-gold-600'
+            }`}
+          >
+            {data.photo_url && idx === 0 ? <Check size={12} className="text-emerald-300" /> : null}
+            {step.label}
+          </button>
+        ))}
       </div>
 
-      {/* Controls */}
-      <div className="space-y-4">
-        {/* Photo upload + controls */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-medium text-walnut-600 dark:text-beige-300 tracking-wide uppercase">Photo</label>
-            {hasPhoto && (
-              <button onClick={removePhoto} className="text-xs text-rose-500 hover:text-rose-400 flex items-center gap-1 transition-colors">
-                <Trash2 size={12} /> Remove
-              </button>
+      {/* Main Studio Viewport */}
+      <div className="grid md:grid-cols-12 gap-6 items-start">
+        {/* Left / Center: Interactive Preview Canvas */}
+        <div className="md:col-span-7 bg-walnut-950 rounded-2xl p-4 border border-gold-400/20 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[360px]">
+          {/* Base Product Mockup */}
+          <div className="relative w-full aspect-square max-w-[340px] rounded-xl overflow-hidden shadow-inner flex items-center justify-center bg-walnut-900/60">
+            <img
+              src={productImage}
+              alt={productName}
+              className="w-full h-full object-contain pointer-events-none select-none z-10 opacity-85"
+            />
+
+            {/* Customer Photo Laser Engraving Simulation Overlay */}
+            {data.photo_url && (
+              <div
+                className="absolute z-20 pointer-events-none transition-all duration-300 flex items-center justify-center overflow-hidden"
+                style={{
+                  top: `${data.photo_transform.y - 25}%`,
+                  left: `${data.photo_transform.x - 25}%`,
+                  width: '50%',
+                  height: '50%',
+                  transform: `scale(${data.photo_transform.scale}) rotate(${data.rotation ?? 0}deg)`,
+                  mixBlendMode: isWood ? 'multiply' : isAcrylic ? 'screen' : 'screen',
+                  opacity: isWood ? 0.88 : 0.92,
+                }}
+              >
+                <img
+                  src={data.photo_url}
+                  alt="Customer Upload"
+                  style={{ filter: getPhotoFilterStyle() }}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            {/* Laser Engraved Custom Text Overlay */}
+            {data.text && (
+              <div
+                className="absolute z-30 pointer-events-none text-center px-4 transition-all duration-300"
+                style={{
+                  top: `${data.text_position.y}%`,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontFamily: data.font,
+                  color: isWood ? '#3a2012' : '#FFFFFF',
+                  textShadow: isWood
+                    ? '0 1px 1px rgba(255,255,255,0.4)'
+                    : '0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(196,163,90,0.6)',
+                }}
+              >
+                <p className="text-sm font-semibold tracking-widest uppercase truncate max-w-[280px]">
+                  {data.text}
+                </p>
+              </div>
+            )}
+
+            {/* Material Glow Simulation Frame */}
+            {isCrystal && (
+              <div className="absolute inset-0 z-15 pointer-events-none bg-gradient-to-tr from-cyan-500/10 via-transparent to-gold-500/10 mix-blend-overlay" />
+            )}
+            {isAcrylic && (
+              <div className="absolute bottom-0 inset-x-0 h-12 z-15 pointer-events-none bg-gradient-to-t from-amber-500/25 to-transparent blur-sm" />
+            )}
+            {isMoonLamp && (
+              <div className="absolute inset-0 z-15 pointer-events-none rounded-full bg-gradient-to-tr from-amber-400/20 via-yellow-200/10 to-transparent blur-md" />
             )}
           </div>
-          {!hasPhoto ? (
-            <label className="flex flex-col items-center justify-center w-full h-24 rounded-card border-2 border-dashed border-champagne-300 dark:border-champagne-800 cursor-pointer hover:border-champagne-500 hover:bg-champagne-50/50 dark:hover:bg-champagne-900/10 transition-colors">
-              <Upload size={20} className="text-champagne-400 mb-1.5" />
-              <span className="text-xs text-walnut-400 font-light">Click to upload your photo</span>
-              <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-            </label>
-          ) : (
-            <div className="space-y-2.5">
-              {/* Zoom + Rotate */}
-              <div className="flex items-center gap-2">
-                <button onClick={() => update({ photo_transform: { ...data.photo_transform, scale: Math.max(0.3, data.photo_transform.scale - 0.1) } })} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-card bg-cream/60 dark:bg-walnut-800/50 border border-champagne-200/40 dark:border-champagne-900/30 text-xs text-walnut-600 dark:text-beige-300 hover:border-champagne-500 transition-colors">
-                  <ZoomOut size={14} /> Zoom Out
-                </button>
-                <button onClick={() => update({ photo_transform: { ...data.photo_transform, scale: Math.min(3, data.photo_transform.scale + 0.1) } })} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-card bg-cream/60 dark:bg-walnut-800/50 border border-champagne-200/40 dark:border-champagne-900/30 text-xs text-walnut-600 dark:text-beige-300 hover:border-champagne-500 transition-colors">
-                  <ZoomIn size={14} /> Zoom In
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => update({ photo_transform: { ...data.photo_transform, rotation: data.photo_transform.rotation - 15 } })} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-card bg-cream/60 dark:bg-walnut-800/50 border border-champagne-200/40 dark:border-champagne-900/30 text-xs text-walnut-600 dark:text-beige-300 hover:border-champagne-500 transition-colors">
-                  <RotateCcw size={14} /> Rotate L
-                </button>
-                <button onClick={() => update({ photo_transform: { ...data.photo_transform, rotation: data.photo_transform.rotation + 15 } })} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-card bg-cream/60 dark:bg-walnut-800/50 border border-champagne-200/40 dark:border-champagne-900/30 text-xs text-walnut-600 dark:text-beige-300 hover:border-champagne-500 transition-colors">
-                  <RotateCw size={14} /> Rotate R
-                </button>
-              </div>
-              <button onClick={() => { if (rawPhoto) setCropping(true); else if (data.photo_url) { setRawPhoto(data.photo_url); setCropping(true); } }} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-card bg-cream/60 dark:bg-walnut-800/50 border border-champagne-200/40 dark:border-champagne-900/30 text-xs text-walnut-600 dark:text-beige-300 hover:border-champagne-500 transition-colors">
-                <Crop size={14} /> Re-crop Photo
-              </button>
-            </div>
-          )}
+
+          {/* Canvas status pill */}
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-beige-300/80 bg-walnut-900/80 px-3 py-1 rounded-full border border-gold-400/20">
+            <Sparkles size={13} className="text-gold-400" />
+            <span>
+              {isCrystal
+                ? '3D Sub-Surface Laser Simulation'
+                : isWood
+                ? 'Laser Scorched Wood Grain Simulation'
+                : isAcrylic
+                ? 'Illuminated Acrylic Edge Simulation'
+                : 'Lithophane Texture Simulation'}
+            </span>
+          </div>
         </div>
 
-        {/* Text controls */}
-        <div>
-          <label className="text-xs font-medium text-walnut-600 dark:text-beige-300 mb-2 block tracking-wide uppercase flex items-center gap-1.5">
-            <Type size={12} /> Custom Text
-          </label>
-          <input
-            type="text"
-            value={data.text}
-            onChange={e => update({ text: e.target.value })}
-            placeholder="Enter names, date, or message..."
-            maxLength={60}
-            className="w-full px-4 py-2.5 bg-ivory dark:bg-walnut-900 text-sm text-walnut-900 dark:text-cream border border-champagne-200/40 dark:border-champagne-900/30 outline-none focus:border-champagne-400 rounded-card font-light"
-          />
-          {hasText && (
-            <div className="grid grid-cols-2 gap-2 mt-2.5">
-              <div>
-                <label className="text-[10px] text-walnut-400 mb-1 block tracking-wide">Font</label>
-                <select
-                  value={data.font}
-                  onChange={e => update({ font: e.target.value })}
-                  className="w-full px-2 py-1.5 rounded-card bg-cream/60 dark:bg-walnut-800/50 text-xs text-walnut-900 dark:text-cream border border-champagne-200/40 dark:border-champagne-900/30 outline-none focus:border-champagne-400"
-                >
-                  {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
+        {/* Right: Step Controls */}
+        <div className="md:col-span-5 space-y-5">
+          {/* TAB 1: Upload */}
+          {activeTab === 'upload' && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-sm font-semibold text-walnut-900 dark:text-cream tracking-wide uppercase flex items-center gap-2">
+                <Upload size={16} className="text-gold-600" /> Upload Your Photo
+              </h4>
+              <p className="text-xs text-walnut-500 dark:text-beige-400 leading-relaxed font-light">
+                High resolution portraits with clear lighting produce the sharpest 3D laser engraving results.
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gold-400/40 hover:border-gold-500 bg-gold-50/20 dark:bg-walnut-900/40 rounded-xl p-6 text-center cursor-pointer transition-all duration-300 group"
+              >
+                <Upload className="mx-auto text-gold-600 group-hover:scale-110 transition-transform duration-300 mb-2" size={28} />
+                <p className="text-xs font-medium text-walnut-900 dark:text-cream">Click or Drag & Drop Photo Here</p>
+                <p className="text-[10px] text-walnut-400 mt-1">JPG, PNG, WebP up to 25MB</p>
               </div>
-              <div>
-                <label className="text-[10px] text-walnut-400 mb-1 block tracking-wide">Color</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {TEXT_COLORS.map(c => (
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleSamplePhoto}
+                  className="flex-1 py-2 text-xs font-medium text-gold-600 border border-gold-400/40 rounded-lg hover:bg-gold-500/10 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Wand2 size={13} /> Try Sample Photo
+                </button>
+                {data.photo_url && (
+                  <button
+                    type="button"
+                    onClick={() => update({ photo_url: null, processed_photo_url: null })}
+                    className="p-2 text-rose-500 border border-rose-500/30 rounded-lg hover:bg-rose-500/10 transition-colors"
+                    title="Remove Photo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: AI Prep & Filters */}
+          {activeTab === 'ai_prep' && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-sm font-semibold text-walnut-900 dark:text-cream tracking-wide uppercase flex items-center gap-2">
+                <Wand2 size={16} className="text-gold-600" /> AI Photo Preparation
+              </h4>
+
+              {/* Filter Cards */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium text-walnut-400 uppercase tracking-wider">Engraving Filter</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {AI_FILTERS.map(f => (
                     <button
-                      key={c.value}
-                      onClick={() => update({ text_color: c.value })}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${data.text_color === c.value ? 'border-champagne-500 scale-110' : 'border-champagne-200/40'}`}
-                      style={{ backgroundColor: c.value }}
-                      title={c.label}
-                    />
+                      key={f.id}
+                      type="button"
+                      onClick={() => applyAIFilter(f.id)}
+                      className={`p-2.5 rounded-xl border text-left transition-all duration-300 ${
+                        data.filter === f.id
+                          ? 'border-gold-500 bg-gold-50/40 dark:bg-gold-900/30 shadow-sm'
+                          : 'border-gold-200/30 dark:border-gold-900/20 hover:border-gold-400'
+                      }`}
+                    >
+                      <div className="text-base mb-1">{f.icon}</div>
+                      <p className="text-xs font-semibold text-walnut-900 dark:text-cream">{f.name}</p>
+                      <p className="text-[10px] text-walnut-400 line-clamp-1">{f.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fine Tuning Sliders */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between text-xs text-walnut-600 dark:text-beige-300">
+                  <span className="flex items-center gap-1.5"><Sun size={13} /> Brightness</span>
+                  <span>{data.brightness}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="60"
+                  max="160"
+                  value={data.brightness ?? 100}
+                  onChange={e => update({ brightness: Number(e.target.value) })}
+                  className="w-full accent-gold-600"
+                />
+
+                <div className="flex items-center justify-between text-xs text-walnut-600 dark:text-beige-300">
+                  <span className="flex items-center gap-1.5"><Contrast size={13} /> Contrast</span>
+                  <span>{data.contrast}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="80"
+                  max="180"
+                  value={data.contrast ?? 110}
+                  onChange={e => update({ contrast: Number(e.target.value) })}
+                  className="w-full accent-gold-600"
+                />
+
+                {/* Transform tools */}
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => update({ rotation: ((data.rotation ?? 0) + 90) % 360 })}
+                    className="flex-1 py-2 text-xs font-medium border border-gold-200/40 rounded-lg hover:bg-gold-500/10 flex items-center justify-center gap-1"
+                  >
+                    <RotateCw size={13} /> Rotate 90°
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => update({
+                      photo_transform: {
+                        ...data.photo_transform,
+                        scale: Math.min(1.5, (data.photo_transform.scale || 1) + 0.1)
+                      }
+                    })}
+                    className="p-2 border border-gold-200/40 rounded-lg hover:bg-gold-500/10"
+                    title="Zoom In"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => update({
+                      photo_transform: {
+                        ...data.photo_transform,
+                        scale: Math.max(0.6, (data.photo_transform.scale || 1) - 0.1)
+                      }
+                    })}
+                    className="p-2 border border-gold-200/40 rounded-lg hover:bg-gold-500/10"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Text Engraving */}
+          {activeTab === 'engraving' && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-sm font-semibold text-walnut-900 dark:text-cream tracking-wide uppercase flex items-center gap-2">
+                <Type size={16} className="text-gold-600" /> Custom Laser Engraving Text
+              </h4>
+
+              <div>
+                <label className="text-[11px] font-medium text-walnut-400 uppercase tracking-wider block mb-1.5">
+                  Engraving Message / Names / Date
+                </label>
+                <input
+                  type="text"
+                  maxLength={36}
+                  placeholder="e.g. Forever Together 14.02.2026"
+                  value={data.text}
+                  onChange={e => update({ text: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-ivory dark:bg-walnut-900 border border-gold-200/40 dark:border-gold-900/40 rounded-xl text-sm text-walnut-900 dark:text-cream focus:outline-none focus:border-gold-500"
+                />
+                <span className="text-[10px] text-walnut-400 mt-1 block text-right">
+                  {data.text.length} / 36 chars
+                </span>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-walnut-400 uppercase tracking-wider block mb-1.5">
+                  Engraving Typography Font
+                </label>
+                <div className="space-y-1.5">
+                  {FONTS.map(f => (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => update({ font: f.value })}
+                      className={`w-full px-3 py-2 text-left rounded-lg text-xs border transition-all ${
+                        data.font === f.value
+                          ? 'border-gold-500 bg-gold-50/40 dark:bg-gold-900/30 text-gold-600 font-semibold'
+                          : 'border-gold-200/20 text-walnut-600 dark:text-beige-300 hover:border-gold-400'
+                      }`}
+                      style={{ fontFamily: f.value }}
+                    >
+                      {f.label}
+                    </button>
                   ))}
                 </div>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Reset */}
-        {(hasPhoto || hasText) && (
-          <button onClick={resetAll} className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-walnut-400 hover:text-rose-500 transition-colors">
-            <RefreshCw size={12} /> Reset Design
-          </button>
-        )}
-      </div>
+          {/* TAB 4: Final Approval */}
+          {activeTab === 'preview' && (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="text-sm font-semibold text-walnut-900 dark:text-cream tracking-wide uppercase flex items-center gap-2">
+                <ShieldCheck size={16} className="text-emerald-500" /> Review & Approve
+              </h4>
 
-      {/* Crop Modal */}
-      {cropping && rawPhoto && (
-        <CropModal
-          imageSrc={rawPhoto}
-          onCancel={() => { setCropping(false); setRawPhoto(null); }}
-          onConfirm={handleCropComplete}
-        />
-      )}
-    </div>
-  );
-}
+              <div className="p-4 bg-gold-50/30 dark:bg-walnut-900/50 rounded-xl border border-gold-200/30 space-y-2 text-xs text-walnut-700 dark:text-beige-300">
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Product:</span> {productName}</p>
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Photo:</span> {data.photo_url ? 'Uploaded & AI Optimized' : 'None'}</p>
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Message:</span> {data.text || 'None'}</p>
+                <p><span className="font-semibold text-walnut-900 dark:text-cream">Filter Style:</span> {data.filter?.toUpperCase()}</p>
+              </div>
 
-/* ---------- Crop Modal ---------- */
-function CropModal({ imageSrc, onCancel, onConfirm }: { imageSrc: string; onCancel: () => void; onConfirm: (crop: { x: number; y: number; width: number; height: number }) => void }) {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [cropBox, setCropBox] = useState({ x: 10, y: 10, width: 80, height: 80 });
-  const [dragging, setDragging] = useState(false);
-  const [resizing, setResizing] = useState<string | null>(null);
-  const dragStartRef = useRef({ x: 0, y: 0, box: { x: 0, y: 0, width: 0, height: 0 } });
+              <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={Boolean(data.approved)}
+                  onChange={e => update({ approved: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 accent-gold-600 rounded"
+                />
+                <span className="text-xs text-walnut-600 dark:text-beige-300 font-medium leading-tight">
+                  I approve this personalization preview for laser craftsmanship.
+                </span>
+              </label>
 
-  useEffect(() => {
-    if (!dragging && !resizing) return;
-    const handleMove = (e: PointerEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const dxPct = ((e.clientX - dragStartRef.current.x) / rect.width) * 100;
-      const dyPct = ((e.clientY - dragStartRef.current.y) / rect.height) * 100;
-      if (dragging) {
-        setCropBox(prev => ({
-          ...prev,
-          x: Math.max(0, Math.min(100 - prev.width, dragStartRef.current.box.x + dxPct)),
-          y: Math.max(0, Math.min(100 - prev.height, dragStartRef.current.box.y + dyPct)),
-        }));
-      } else if (resizing) {
-        const box = dragStartRef.current.box;
-        if (resizing === 'br') {
-          const newW = Math.max(20, Math.min(100 - box.x, box.width + dxPct));
-          const newH = Math.max(20, Math.min(100 - box.y, box.height + dyPct));
-          const size = Math.min(newW, newH);
-          setCropBox({ ...box, width: size, height: size });
-        } else if (resizing === 'tl') {
-          const newW = Math.max(20, box.width - dxPct);
-          const newH = Math.max(20, box.height - dyPct);
-          const size = Math.min(newW, newH);
-          setCropBox({
-            x: Math.min(box.x + box.width - 20, box.x + (box.width - size)),
-            y: Math.min(box.y + box.height - 20, box.y + (box.height - size)),
-            width: size,
-            height: size,
-          });
-        }
-      }
-    };
-    const handleUp = () => { setDragging(false); setResizing(null); };
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-    };
-  }, [dragging, resizing]);
-
-  const handleConfirm = () => {
-    if (!imgRef.current) return;
-    const img = imgRef.current;
-    const naturalWidth = img.naturalWidth;
-    const naturalHeight = img.naturalHeight;
-    onConfirm({
-      x: (cropBox.x / 100) * naturalWidth,
-      y: (cropBox.y / 100) * naturalHeight,
-      width: (cropBox.width / 100) * naturalWidth,
-      height: (cropBox.height / 100) * naturalHeight,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-walnut-950/80 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-walnut-900 rounded-card p-5 border border-champagne-900/20 shadow-xl max-w-lg w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-lg text-cream flex items-center gap-2"><Crop size={18} className="text-champagne-500" /> Crop Your Photo</h3>
-          <button onClick={onCancel} className="p-2 text-walnut-400 hover:text-cream"><X size={18} /></button>
-        </div>
-        <div
-          ref={containerRef}
-          className="relative w-full aspect-square rounded-card overflow-hidden bg-walnut-800 mb-4"
-        >
-          <img ref={imgRef} src={imageSrc} alt="Crop" className="absolute inset-0 w-full h-full object-contain pointer-events-none" draggable={false} />
-          {/* Dark overlay */}
-          <div className="absolute inset-0 bg-walnut-950/50 pointer-events-none" style={{ clipPath: `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cropBox.x}% ${cropBox.y}%, ${cropBox.x}% ${cropBox.y + cropBox.height}%, ${cropBox.x + cropBox.width}% ${cropBox.y + cropBox.height}%, ${cropBox.x + cropBox.width}% ${cropBox.y}%, ${cropBox.x}% ${cropBox.y}%)` }} />
-          {/* Crop box */}
-          <div
-            onPointerDown={(e) => { e.preventDefault(); dragStartRef.current = { x: e.clientX, y: e.clientY, box: { ...cropBox } }; setDragging(true); }}
-            className="absolute border-2 border-champagne-500 cursor-move"
-            style={{ left: `${cropBox.x}%`, top: `${cropBox.y}%`, width: `${cropBox.width}%`, height: `${cropBox.height}%` }}
-          >
-            {/* Grid lines */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/3 left-0 right-0 border-t border-champagne-400/30" />
-              <div className="absolute top-2/3 left-0 right-0 border-t border-champagne-400/30" />
-              <div className="absolute left-1/3 top-0 bottom-0 border-l border-champagne-400/30" />
-              <div className="absolute left-2/3 top-0 bottom-0 border-l border-champagne-400/30" />
+              <button
+                type="button"
+                onClick={generatePreviewSnapshot}
+                disabled={!data.photo_url && !data.text}
+                className="w-full py-3 bg-gold-600 hover:bg-gold-500 disabled:opacity-50 text-ivory text-xs font-semibold uppercase tracking-wider2 rounded-btn transition-all duration-300 shadow-md flex items-center justify-center gap-2"
+              >
+                <Check size={14} /> Confirm Personalization
+              </button>
             </div>
-            {/* Corner handles */}
-            <div onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); dragStartRef.current = { x: e.clientX, y: e.clientY, box: { ...cropBox } }; setResizing('tl'); }} className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-champagne-500 rounded-sm cursor-nwse-resize" />
-            <div onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); dragStartRef.current = { x: e.clientX, y: e.clientY, box: { ...cropBox } }; setResizing('br'); }} className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-champagne-500 rounded-sm cursor-nwse-resize" />
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={handleConfirm} className="flex-1 py-2.5 rounded-card bg-champagne-600 hover:bg-champagne-500 text-ivory text-sm font-medium flex items-center justify-center gap-2 transition-colors">
-            <Check size={16} /> Apply Crop
-          </button>
-          <button onClick={onCancel} className="px-5 py-2.5 rounded-card bg-walnut-800 text-beige-300 text-sm font-medium">Cancel</button>
+          )}
         </div>
       </div>
     </div>

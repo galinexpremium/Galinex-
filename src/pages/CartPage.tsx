@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Minus, Trash2, ShoppingBag, Heart, Tag, X, ArrowRight, Save } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
-import { formatPrice, getEffectivePrice } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getProductImageUrl } from '@/lib/format';
 
 export default function CartPage() {
   const { cartItems, updateCartQuantity, removeFromCart, saveForLater, navigate, cartSubtotal, applyCoupon, removeCoupon, couponCode, discountAmount, toggleWishlist } = useStore();
@@ -23,35 +23,30 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center max-w-7xl mx-auto px-4">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto rounded-card bg-cream dark:bg-walnut-900 flex items-center justify-center mb-6 border border-champagne-200/30">
-            <ShoppingBag size={40} className="text-champagne-400" />
-          </div>
-          <h1 className="text-3xl font-display text-walnut-900 dark:text-ivory mb-3 tracking-tight">Your Cart is Empty</h1>
-          <div className="w-16 h-px bg-champagne-300 mx-auto mb-4" />
-          <p className="text-walnut-500 dark:text-beige-400 mb-8 max-w-md mx-auto">Discover our premium personalized gifts, crafted with timeless elegance.</p>
-          <button onClick={() => navigate('shop')} className="px-10 py-3.5 rounded-card bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium tracking-wide inline-flex items-center gap-2 transition-colors">
-            Start Shopping <ArrowRight size={18} />
-          </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-cream dark:bg-walnut-800 flex items-center justify-center text-champagne-600">
+          <ShoppingBag size={32} />
         </div>
+        <h1 className="font-display text-3xl text-walnut-900 dark:text-ivory mb-3">Your shopping bag is empty</h1>
+        <p className="text-walnut-500 dark:text-beige-400 mb-8 font-light">Explore our curated collection of personalized luxury gifts</p>
+        <button onClick={() => navigate('shop')} className="px-8 py-3.5 bg-champagne-600 hover:bg-champagne-500 text-ivory font-medium text-sm tracking-wide rounded-card transition-colors">
+          Discover Collections
+        </button>
       </div>
     );
   }
 
+  const activeItems = cartItems.filter(i => !i.saved_for_later);
   const savedItems = cartItems.filter(i => i.saved_for_later);
 
   return (
-    <div className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-4xl font-display text-walnut-900 dark:text-ivory tracking-tight">Shopping Cart</h1>
-        <div className="mt-3 h-px bg-gradient-to-r from-champagne-400 via-champagne-200 to-transparent" />
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="font-display text-3xl sm:text-4xl text-walnut-900 dark:text-ivory mb-8 tracking-tight">Shopping Bag ({activeItems.length})</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {cartItems.map(item => {
+          {activeItems.map(item => {
             const price = item.product ? getEffectivePrice(item.product) : 0;
             return (
               <div key={item.id} className="flex gap-5 p-5 bg-ivory dark:bg-walnut-900 rounded-card border border-champagne-200/30 dark:border-champagne-900/20">
@@ -59,7 +54,7 @@ export default function CartPage() {
                   onClick={() => item.product && navigate('product', { slug: item.product!.slug })}
                   className="w-24 h-24 rounded-card overflow-hidden bg-cream dark:bg-walnut-800 flex-shrink-0"
                 >
-                  <img src={item.product?.image_url ?? ''} alt={item.product?.name ?? ''} className="w-full h-full object-cover" />
+                  <img src={getProductImageUrl(item.product)} alt={item.product?.name ?? ''} className="w-full h-full object-cover" />
                 </button>
 
                 <div className="flex-1 min-w-0">
@@ -131,7 +126,7 @@ export default function CartPage() {
               {savedItems.map(item => (
                 <div key={item.id} className="flex gap-4 p-4 bg-cream/50 dark:bg-walnut-800/30 rounded-card mb-3 border border-champagne-200/20">
                   <div className="w-20 h-20 rounded-card overflow-hidden bg-cream dark:bg-walnut-800 flex-shrink-0">
-                    <img src={item.product?.image_url ?? ''} alt="" className="w-full h-full object-cover" />
+                    <img src={getProductImageUrl(item.product)} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium text-sm text-walnut-900 dark:text-ivory tracking-wide">{item.product?.name}</h3>

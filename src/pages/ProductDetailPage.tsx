@@ -3,7 +3,7 @@ import { Star, Heart, BarChart3, ShoppingBag, Share2, Truck, Shield, RefreshCw, 
 import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
 import type { Product, Review, CustomizationData } from '@/types';
-import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor, getProductImageUrl } from '@/lib/format';
 import { WHATSAPP_NUMBER } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import ProductCustomizer from '@/components/ProductCustomizer';
@@ -31,7 +31,8 @@ export default function ProductDetailPage() {
       const p = prod as Product;
       setProduct(p);
       addRecentlyViewed(p);
-      const imgs = [p.image_url].filter(Boolean) as string[];
+      const defaultImg = getProductImageUrl(p);
+      const imgs = [p.image_url || defaultImg].filter(Boolean) as string[];
       const { data: imgData } = await supabase.from('product_images').select('*').eq('product_id', p.id).order('sort_order');
       if (imgData) imgData.forEach(i => { if (!imgs.includes(i.image_url)) imgs.push(i.image_url); });
       setImages(imgs);
@@ -153,7 +154,8 @@ export default function ProductDetailPage() {
                 <Plus size={16} className="text-champagne-600" /> Personalize Your Gift
               </h4>
               <ProductCustomizer
-                productImage={images[activeImage] ?? product.image_url ?? ''}
+                product={product}
+                productImage={images[activeImage] ?? getProductImageUrl(product)}
                 productName={product.name}
                 onChange={setCustomizationData}
               />

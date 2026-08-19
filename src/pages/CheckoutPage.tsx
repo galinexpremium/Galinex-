@@ -3,7 +3,7 @@ import { Check, MessageCircle, CreditCard, Wallet, Banknote, ArrowRight, ArrowLe
 import { useStore } from '@/store/StoreContext';
 import { useAuth } from '@/store/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getEffectivePrice } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getProductImageUrl } from '@/lib/format';
 import { buildWhatsAppOrderMessage, openWhatsApp } from '@/lib/whatsapp';
 import type { ShippingAddress } from '@/types';
 
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
         order_id: orderId,
         product_id: item.product_id,
         product_name: item.product?.name ?? 'Product',
-        product_image: item.product?.image_url ?? null,
+        product_image: getProductImageUrl(item.product),
         variant_name: item.variant_name,
         quantity: item.quantity,
         unit_price: item.product ? getEffectivePrice(item.product) : 0,
@@ -378,7 +378,7 @@ export default function CheckoutPage() {
                   <div className="space-y-4">
                     {cartItems.map(item => (
                       <div key={item.id} className="flex gap-4">
-                        <img src={item.product?.image_url ?? ''} alt="" className="w-16 h-16 rounded-card object-cover border border-gold-200/30" />
+                        <img src={getProductImageUrl(item.product)} alt="" className="w-16 h-16 rounded-card object-cover border border-gold-200/30" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-walnut-900 dark:text-ivory tracking-wide">{item.product?.name}</p>
                           <p className="text-xs text-walnut-500 dark:text-beige-400 mt-1">Qty: {item.quantity}</p>

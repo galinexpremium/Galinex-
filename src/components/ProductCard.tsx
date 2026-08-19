@@ -1,7 +1,7 @@
 import { Heart, BarChart3, Eye, Star, ShoppingBag, Sparkles, MessageCircle } from 'lucide-react';
 import type { Product } from '@/types';
 import { useStore } from '@/store/StoreContext';
-import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor } from '@/lib/format';
+import { formatPrice, getEffectivePrice, getDiscountPercent, badgeLabel, badgeColor, getProductImageUrl } from '@/lib/format';
 import { WHATSAPP_NUMBER } from '@/lib/supabase';
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -11,6 +11,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const price = getEffectivePrice(product);
   const isPriced = price > 0;
   const discount = isPriced ? getDiscountPercent(product) : 0;
+  const imageUrl = getProductImageUrl(product);
 
   return (
     <div className="group relative bg-ivory dark:bg-walnut-900 rounded-card overflow-hidden transition-all duration-700 luxury-shadow hover:luxury-shadow-xl hover:-translate-y-2 border border-gold-200/30 dark:border-gold-900/20 hover:border-gold-400/50 dark:hover:border-gold-700/40">
@@ -58,13 +59,16 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* Image - larger */}
       <button
         onClick={() => navigate('product', { slug: product.slug })}
-        className="block w-full aspect-[4/5] overflow-hidden bg-cream dark:bg-walnut-800"
+        className="block w-full aspect-[4/5] overflow-hidden bg-cream dark:bg-walnut-800 relative"
       >
         <img
-          src={product.image_url ?? ''}
+          src={imageUrl}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/products/3d-crystal-gifts/5x5x8-3d-crystal-single-image.webp';
+          }}
         />
       </button>
 

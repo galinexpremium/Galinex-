@@ -3,7 +3,7 @@ import { User, Package, Heart, MapPin, Bell, LogOut, ShoppingBag, Settings, Chec
 import { useAuth } from '@/store/AuthContext';
 import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatDate } from '@/lib/format';
+import { formatPrice, formatDate, getProductImageUrl } from '@/lib/format';
 import type { Order } from '@/types';
 
 export default function AccountPage() {
@@ -205,7 +205,7 @@ export default function AccountPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   {wishlistItems.map(item => (
                     <div key={item.id} className="flex gap-3 p-4 bg-ivory dark:bg-walnut-950 rounded-card border border-champagne-200 dark:border-champagne-900/40">
-                      <img src={item.product?.image_url ?? ''} alt="" className="w-16 h-16 rounded-card object-cover" />
+                      <img src={getProductImageUrl(item.product)} alt="" className="w-16 h-16 rounded-card object-cover" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-walnut-900 dark:text-ivory">{item.product?.name}</p>
                         <p className="text-sm text-champagne-700 dark:text-champagne-400">{item.product ? formatPrice(item.product.sale_price ?? item.product.base_price) : ''}</p>
