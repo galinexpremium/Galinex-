@@ -1,24 +1,44 @@
 export function formatPrice(price: number | null | undefined): string {
-  if (price === null || price === undefined || price <= 0) {
+  if (price === null || price === undefined || typeof price !== 'number' || !Number.isFinite(price) || price <= 0) {
     return 'Price on Request';
   }
-  return '₹' + price.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  try {
+    return '₹' + price.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  } catch {
+    return '₹' + Math.round(price);
+  }
 }
 
-export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+export function formatDate(date: string | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
 }
 
-export function getEffectivePrice(product: { base_price: number | null; sale_price: number | null }): number {
-  return (product.sale_price && product.sale_price > 0) ? product.sale_price : (product.base_price ?? 0);
+export function getEffectivePrice(product?: { base_price?: number | null; sale_price?: number | null } | null): number {
+  if (!product) return 0;
+  if (product.sale_price !== null && product.sale_price !== undefined && product.sale_price > 0) {
+    return product.sale_price;
+  }
+  if (product.base_price !== null && product.base_price !== undefined && product.base_price > 0) {
+    return product.base_price;
+  }
+  return 0;
 }
 
-export function getDiscountPercent(product: { base_price: number; sale_price: number | null }): number {
-  if (!product.sale_price) return 0;
+export function getDiscountPercent(product?: { base_price?: number | null; sale_price?: number | null } | null): number {
+  if (!product || product.base_price === null || product.base_price === undefined || product.base_price <= 0) return 0;
+  if (product.sale_price === null || product.sale_price === undefined || product.sale_price <= 0) return 0;
+  if (product.sale_price >= product.base_price) return 0;
   return Math.round(((product.base_price - product.sale_price) / product.base_price) * 100);
 }
 

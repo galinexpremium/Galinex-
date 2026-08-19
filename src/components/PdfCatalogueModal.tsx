@@ -234,7 +234,7 @@ export default function PdfCatalogueModal({ isOpen, onClose }: PdfCatalogueModal
                             <span className="font-display text-lg font-semibold text-champagne-700 dark:text-champagne-400 print:text-black">
                               {formatPrice(effectivePrice)}
                             </span>
-                            {p.sale_price && p.sale_price < p.base_price && (
+                            {p.sale_price && p.base_price && p.sale_price < p.base_price && (
                               <span className="ml-2 text-xs line-through text-walnut-400">
                                 {formatPrice(p.base_price)}
                               </span>

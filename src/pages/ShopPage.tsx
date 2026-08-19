@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { SlidersHorizontal, X, ChevronDown, BookOpen } from 'lucide-react';
 import { useStore } from '@/store/StoreContext';
 import { supabase } from '@/lib/supabase';
+import { getEffectivePrice } from '@/lib/format';
 import type { Product, Category, SortOption } from '@/types';
 import ProductCard from '@/components/ProductCard';
 
@@ -54,18 +55,18 @@ export default function ShopPage() {
       );
     }
     result = result.filter(p => {
-      const price = p.sale_price ?? p.base_price;
+      const price = getEffectivePrice(p);
       if (!price || price <= 0) return true;
       return price >= priceRange[0] && price <= priceRange[1];
     });
     if (selectedOccasions.length > 0) result = result.filter(p => p.occasions?.some(o => selectedOccasions.includes(o)));
     if (selectedMaterials.length > 0) result = result.filter(p => p.material && selectedMaterials.includes(p.material));
     switch (sort) {
-      case 'price_low': result.sort((a, b) => (a.sale_price ?? a.base_price) - (b.sale_price ?? b.base_price)); break;
-      case 'price_high': result.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price)); break;
-      case 'newest': result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); break;
-      case 'best_selling': result.sort((a, b) => b.sold_count - a.sold_count); break;
-      default: result.sort((a, b) => b.sold_count - a.sold_count);
+      case 'price_low': result.sort((a, b) => (getEffectivePrice(a) || Infinity) - (getEffectivePrice(b) || Infinity)); break;
+      case 'price_high': result.sort((a, b) => (getEffectivePrice(b) || 0) - (getEffectivePrice(a) || 0)); break;
+      case 'newest': result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()); break;
+      case 'best_selling': result.sort((a, b) => (b.sold_count || 0) - (a.sold_count || 0)); break;
+      default: result.sort((a, b) => (b.sold_count || 0) - (a.sold_count || 0));
     }
     return result;
   }, [products, selectedCategory, searchTerm, priceRange, selectedOccasions, selectedMaterials, sort]);

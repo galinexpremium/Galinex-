@@ -214,7 +214,7 @@ export default function ProductDetailPage() {
             <span className={`font-display font-medium text-walnut-900 dark:text-cream ${price > 0 ? 'text-3xl' : 'text-xl text-champagne-600 dark:text-champagne-400 font-sans tracking-wide uppercase'}`}>
               {formatPrice(price)}
             </span>
-            {price > 0 && product.sale_price && product.sale_price < product.base_price && (
+            {price > 0 && product.sale_price && product.base_price && product.sale_price < product.base_price && (
               <span className="text-lg text-walnut-400 line-through font-light">{formatPrice(product.base_price)}</span>
             )}
             {price > 0 && discount > 0 && (

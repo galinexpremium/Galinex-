@@ -122,7 +122,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <span className={`font-display font-semibold text-walnut-900 dark:text-cream ${isPriced ? 'text-base sm:text-lg text-gold-700 dark:text-gold-400' : 'text-xs text-gold-600 dark:text-gold-400 font-sans tracking-wide uppercase font-medium'}`}>
               {formatPrice(price)}
             </span>
-            {isPriced && product.sale_price && product.sale_price < product.base_price && (
+            {isPriced && product.sale_price && product.base_price && product.sale_price < product.base_price && (
               <span className="text-[11px] text-walnut-400 line-through font-light">{formatPrice(product.base_price)}</span>
             )}
           </div>
